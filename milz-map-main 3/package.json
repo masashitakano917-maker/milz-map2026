@@ -1,0 +1,37 @@
+{
+  "name": "milz-map-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js",
+    "build": "node node_modules/vite/bin/vite.js build",
+    "preview": "node node_modules/vite/bin/vite.js preview",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "1.48.0",
+    "@supabase/supabase-js": "2.101.1",
+    "@tailwindcss/vite": "4.2.2",
+    "clsx": "2.1.1",
+    "country-state-city": "3.2.1",
+    "leaflet": "1.9.4",
+    "lucide-react": "0.546.0",
+    "motion": "12.38.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-leaflet": "5.0.0",
+    "tailwind-merge": "3.5.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "1.9.21",
+    "@types/node": "22.19.17",
+    "@vitejs/plugin-react": "5.2.0",
+    "tailwindcss": "4.2.2",
+    "typescript": "5.8.3",
+    "vite": "6.4.1"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
