@@ -30,6 +30,9 @@ interface PlaceLike {
   category: string;
   lat: number;
   lng: number;
+  image_url?: string | null;
+  images?: string[] | null;
+  description?: string | null;
 }
 
 interface TempAiPinLike {
@@ -364,6 +367,7 @@ export default function TokyoMiniatureMap({
   const aiFavoriteMarkerRefs = useRef<any[]>([]);
   const tempMarkerRef = useRef<any | null>(null);
   const addMarkerRef = useRef<any | null>(null);
+  const activePopupRef = useRef<any | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const hasKey = Boolean(apiKey && apiKey.trim());
   const visualPreset = styleVariant === 'style3' ? 'soft' : styleVariant === 'style4' ? 'miniature' : 'top';
@@ -498,12 +502,57 @@ export default function TokyoMiniatureMap({
     markerRefs.current.forEach((marker) => marker.remove?.());
     markerRefs.current = [];
 
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[ch] as string));
+
     places.forEach((place) => {
       const el = createMarkerNode('place', place.name, place.category);
       el.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        onSelectPlace(place);
+
+        activePopupRef.current?.remove?.();
+
+        const thumb = place.image_url || place.images?.[0] || '';
+        const descRaw = (place.description || '').trim();
+        const descTrimmed = descRaw.length > 90 ? descRaw.slice(0, 90) + '…' : descRaw;
+
+        const popupEl = document.createElement('div');
+        popupEl.className = 'milz-map-popup';
+        popupEl.innerHTML = `
+          ${thumb ? `<div class="milz-map-popup__thumb"><img src="${escapeHtml(thumb)}" alt="" referrerpolicy="no-referrer" /></div>` : ''}
+          <div class="milz-map-popup__body">
+            <div class="milz-map-popup__category">${escapeHtml(place.category || '')}</div>
+            <div class="milz-map-popup__title">${escapeHtml(place.name || '')}</div>
+            ${descTrimmed ? `<div class="milz-map-popup__desc">${escapeHtml(descTrimmed)}</div>` : ''}
+            <button type="button" class="milz-map-popup__cta">DETAILS</button>
+          </div>
+        `;
+
+        popupEl.querySelector('.milz-map-popup__cta')?.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          activePopupRef.current?.remove?.();
+          activePopupRef.current = null;
+          onSelectPlace(place);
+        });
+
+        const popup = new sdk.Popup({ offset: 36, closeButton: true, closeOnClick: true, maxWidth: '280px' })
+          .setLngLat([place.lng, place.lat])
+          .setDOMContent(popupEl)
+          .addTo(map);
+
+        popup.on?.('close', () => {
+          if (activePopupRef.current === popup) activePopupRef.current = null;
+        });
+
+        activePopupRef.current = popup;
       });
 
       const marker = new sdk.Marker({ element: el, anchor: 'bottom' })
@@ -512,6 +561,11 @@ export default function TokyoMiniatureMap({
 
       markerRefs.current.push(marker);
     });
+
+    return () => {
+      activePopupRef.current?.remove?.();
+      activePopupRef.current = null;
+    };
   }, [places, onSelectPlace]);
 
   useEffect(() => {
