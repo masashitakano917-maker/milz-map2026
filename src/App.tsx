@@ -72,7 +72,7 @@ const DropZone = ({ onFilesDrop, label, className, icon: Icon = Upload, isLoadin
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { Type } from "@google/genai";
 import { Country, State, City } from 'country-state-city';
 import { MAP_THEMES, TOKYO_ILLUSTRATION_THEME, isIllustrationTheme, type MapThemeKey } from './illustrationMaps';
 import TokyoMiniatureMap, { type MapNavigator } from './TokyoMiniatureMap';
@@ -81,6 +81,45 @@ import MilzLanding from './MilzLanding';
 // Utility for tailwind classes
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+async function callGeminiProxy(payload: { model: string; contents: any; config?: any }): Promise<{ text: string }> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    throw new Error('Supabase is not configured');
+  }
+  let token = anonKey;
+  try {
+    const client = getSupabase();
+    if (client) {
+      const { data } = await client.auth.getSession();
+      if (data?.session?.access_token) token = data.session.access_token;
+    }
+  } catch {
+    // fall back to anon key
+  }
+  const response = await fetch(`${supabaseUrl}/functions/v1/gemini-proxy`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': anonKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    let message = `Gemini proxy request failed (${response.status})`;
+    try {
+      const errData = JSON.parse(text);
+      if (errData?.error) message = errData.error;
+    } catch {
+      // keep default message
+    }
+    throw new Error(message);
+  }
+  return JSON.parse(text) as { text: string };
 }
 
 function parseUrlList(raw?: string | null): string[] {
@@ -2930,13 +2969,7 @@ export default function App() {
     if (!modalAddress.trim()) return;
     setIsGeocoding(true);
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        showToast("Gemini APIキーが設定されていません。", "error");
-        return;
-      }
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
+      const response = await callGeminiProxy({
         model: "gemini-3-flash-preview",
         contents: `Find the latitude and longitude for: "${modalAddress}". Return ONLY a JSON object with "lat" and "lng" keys.`,
         config: {
@@ -3974,7 +4007,7 @@ export default function App() {
     setTempAiPin(null);
     focusMapOnCoords({ lat: normalized.lat, lng: normalized.lng });
   };
-  const translateAiResults = React.useCallback(async ({ sourceResults, targetLocale, locationStr, ai }: { sourceResults: AIResults; targetLocale: Locale; locationStr: string; ai: GoogleGenAI }) => {
+  const translateAiResults = React.useCallback(async ({ sourceResults, targetLocale, locationStr }: { sourceResults: AIResults; targetLocale: Locale; locationStr: string }) => {
     const translationPrompt = `You are the MILZ bilingual editor. Convert the following MILZ AI recommendation pool for ${locationStr} into ${targetLocale === 'jp' ? 'natural Japanese' : 'natural English'}. Preserve the exact same 30 spots, the same order, the same category labels, and the same coordinates. Only rewrite the textual fields for the target language. Use established English place names when they exist. Return ONLY valid JSON matching the schema. Data: ${JSON.stringify(sourceResults)}`;
 
     const translationSchema = {
@@ -4016,7 +4049,7 @@ export default function App() {
       required: ['meta', 'recommendations']
     };
 
-    const response = await ai.models.generateContent({
+    const response = await callGeminiProxy({
       model: 'gemini-3-flash-preview',
       contents: translationPrompt,
       config: {
@@ -4125,19 +4158,11 @@ export default function App() {
       }
 
       // 2. キャッシュがない、または期限切れの場合はAIを呼び出す
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        showToast("Gemini APIキーが設定されていません。", "error");
-        return;
-      }
-      const ai = new GoogleGenAI({ apiKey });
-
       if (alternateValidCache?.data) {
         const translatedResults = await translateAiResults({
           sourceResults: alternateValidCache.data as AIResults,
           targetLocale: locale,
           locationStr,
-          ai,
         });
 
         setAiResults(translatedResults);
@@ -4225,7 +4250,7 @@ Return ONLY valid JSON matching the schema.`;
         required: ['meta', 'recommendations']
       };
 
-      const response = await ai.models.generateContent({
+      const response = await callGeminiProxy({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
