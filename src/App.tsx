@@ -234,23 +234,14 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
 
   if (youtubeEmbedUrl) {
     return (
-      <div className="w-full h-full bg-stone-950 text-white flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <Video className="w-10 h-10 text-white/75" />
-        <div className="space-y-1.5 max-w-[18rem]">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50">MILZ VIDEO</p>
-          <p className="text-sm font-semibold text-white/90">Legacy YouTube clip</p>
-          <p className="text-xs leading-relaxed text-white/60">Upload MP4 or MOV into MILZ for direct playback. Existing YouTube clips can still open in a new tab.</p>
-        </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.2em] text-white hover:border-white/45 hover:bg-white/5 transition-all"
-        >
-          <ExternalLink className="w-4 h-4" />
-          Open YouTube
-        </a>
-      </div>
+      <iframe
+        src={youtubeEmbedUrl}
+        title={title}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
     );
   }
 
@@ -5737,13 +5728,21 @@ Return ONLY valid JSON matching the schema.`;
                                     loop
                                     preload="metadata"
                                   />
+                                ) : item.embedUrl ? (
+                                  <iframe
+                                    src={item.embedUrl}
+                                    title={item.placeName}
+                                    className="w-full h-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                  />
                                 ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-4 bg-stone-950">
                                     <Video className="w-10 h-10 text-white/70" />
                                     <div className="space-y-2">
-                                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">Legacy YouTube</p>
-                                      <p className="text-sm font-semibold text-white/90">Open externally</p>
-                                      <p className="text-xs leading-relaxed text-white/60">For reliable in-app playback, upload MP4 into MILZ. Legacy YouTube clips open in a new tab.</p>
+                                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">MILZ VIDEO</p>
+                                      <p className="text-sm font-semibold text-white/90">Video unavailable</p>
                                     </div>
                                     <a
                                       href={item.url}
@@ -5752,7 +5751,7 @@ Return ONLY valid JSON matching the schema.`;
                                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.22em] text-white hover:border-white/45 hover:bg-white/5 transition-all"
                                     >
                                       <ExternalLink className="w-4 h-4" />
-                                      Open YouTube
+                                      Open Link
                                     </a>
                                   </div>
                                 )}
