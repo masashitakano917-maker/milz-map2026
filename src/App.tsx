@@ -3232,8 +3232,9 @@ export default function App() {
     }
 
     try {
+      const { reviews: _reviews, ...editDetailFormWithoutReviews } = editDetailForm as any;
       const sanitizedDetailForm = {
-        ...editDetailForm,
+        ...editDetailFormWithoutReviews,
         videos: normalizeStoredVideoUrlList((editDetailForm.videos || []).join('\n')),
         from_spot_items: (editDetailForm.from_spot_items || []).map((item) => {
           const mediaType = inferMediaTypeFromUrl(item.media_url);
