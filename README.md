@@ -1,6 +1,6 @@
 # milz map app
 
-Cloudflare Pages + R2 + Supabase で運用する前提に整理した Vite/React プロジェクトです。
+Cloudflare Pages + R2 + Supabase で運用する前提に整理した Vite/React プロジェクトです
 
 ## 変更内容
 
