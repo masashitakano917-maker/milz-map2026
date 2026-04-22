@@ -4944,12 +4944,6 @@ Return ONLY valid JSON matching the schema.`;
                                   <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-[0.1em]">
                                     {place.category}
                                   </span>
-                                  {place.rating && (
-                                    <div className="flex items-center gap-0.5 text-amber-500">
-                                      <Star className="w-2.5 h-2.5 fill-current" />
-                                      <span className="text-[9px] font-bold">{place.rating}</span>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                               <button 
