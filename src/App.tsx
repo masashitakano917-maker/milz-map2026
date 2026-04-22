@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { getSupabase, testSupabaseConnection, resetSupabaseClient } from './supabase';
-import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark } from 'lucide-react';
+import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
 
 // DropZone component for drag & drop uploads
 const DropZone = ({ onFilesDrop, label, className, icon: Icon = Upload, isLoading = false, accept = "*/*" }: { 
@@ -1983,6 +1983,14 @@ export default function App() {
   });
   const [showMapStyleMenu, setShowMapStyleMenu] = useState(false);
   const [expandedShortInfoId, setExpandedShortInfoId] = useState<string | null>(null);
+  const [shortsSwipeHintVisible, setShortsSwipeHintVisible] = useState(true);
+
+  useEffect(() => {
+    if (activeTab !== 'shorts') return;
+    setShortsSwipeHintVisible(true);
+    const timer = window.setTimeout(() => setShortsSwipeHintVisible(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [activeTab]);
 
   const detailViewOnMapLabel = locale === 'jp' ? '地図で見る' : 'View on Map';
   const detailMiniMapLabel = locale === 'jp' ? '同一ページで位置を確認できるミニマップです。' : 'Mini map for quick location context on the same page.';
@@ -4503,9 +4511,13 @@ Return ONLY valid JSON matching the schema.`;
     const items: ShortFeedItem[] = [];
     places.forEach((place) => {
       preferPlayableVideoUrls(place.videos || []).forEach((url, index) => {
-        const embedUrl = getYouTubeEmbedUrl(url);
-        const directVideo = isLikelyVideoUrl(url) && !embedUrl;
-        if (!embedUrl && !directVideo) return;
+        const baseEmbedUrl = getYouTubeEmbedUrl(url);
+        const directVideo = isLikelyVideoUrl(url) && !baseEmbedUrl;
+        if (!baseEmbedUrl && !directVideo) return;
+        const ytId = extractYouTubeVideoId(url);
+        const autoplayEmbedUrl = baseEmbedUrl && ytId
+          ? `${baseEmbedUrl}&autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=1&modestbranding=1`
+          : baseEmbedUrl || undefined;
         items.push({
           id: `${place.id}::${index}`,
           placeId: place.id,
@@ -4516,7 +4528,7 @@ Return ONLY valid JSON matching the schema.`;
           lng: place.lng,
           url,
           playbackType: directVideo ? 'direct' : 'youtube',
-          embedUrl: embedUrl || undefined,
+          embedUrl: autoplayEmbedUrl,
           imageUrl: place.image_url,
           address: place.address || [place.municipality, place.prefecture, place.country].filter(Boolean).join(', '),
           hours: place.hours,
@@ -5640,8 +5652,35 @@ Return ONLY valid JSON matching the schema.`;
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="h-full overflow-y-auto bg-black text-white pb-[calc(10rem+env(safe-area-inset-bottom))] md:pb-44 snap-y snap-mandatory overscroll-y-contain"
+              onScroll={() => {
+                if (shortsSwipeHintVisible) setShortsSwipeHintVisible(false);
+              }}
+              className="relative h-full overflow-y-auto bg-black text-white pb-[calc(10rem+env(safe-area-inset-bottom))] md:pb-44 snap-y snap-mandatory overscroll-y-contain"
             >
+              <AnimatePresence>
+                {shortsFeed.length > 1 && shortsSwipeHintVisible && (
+                  <motion.div
+                    key="shorts-swipe-hint"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    className="pointer-events-none fixed left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2"
+                    style={{ bottom: 'calc(10.5rem + env(safe-area-inset-bottom))' }}
+                  >
+                    <motion.div
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                      className="flex flex-col items-center gap-1.5 rounded-full border border-white/20 bg-black/55 backdrop-blur-md px-5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+                    >
+                      <ChevronUp className="w-4 h-4 text-white" strokeWidth={2.5} />
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white">
+                        {locale === 'jp' ? '上にスワイプで次の動画' : 'Swipe up for next'}
+                      </span>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {shortsFeed.length === 0 ? (
                 <div className="h-full flex items-center justify-center px-6">
                   <div className="max-w-md w-full text-center space-y-4">
@@ -5746,7 +5785,8 @@ Return ONLY valid JSON matching the schema.`;
                                     playsInline
                                     muted
                                     loop
-                                    preload="metadata"
+                                    autoPlay
+                                    preload="auto"
                                   />
                                 ) : item.embedUrl ? (
                                   <iframe
