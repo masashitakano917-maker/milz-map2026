@@ -2148,7 +2148,18 @@ export default function App() {
     });
   }, [activeIllustrationTheme, mapStyle]);
   
-  const [locationFilter, setLocationFilter] = useState(() => createLocationFilterFromArea('tokyo', 'Shibuya'));
+  const [locationFilter, setLocationFilter] = useState(() => {
+    const initialArea = (() => {
+      if (typeof window === 'undefined') return 'tokyo';
+      const injected = (window as unknown as { __MILZ_INITIAL_AREA__?: string }).__MILZ_INITIAL_AREA__;
+      if (injected) return injected;
+      const seg = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/')[0];
+      const valid = new Set(['tokyo', 'new-york', 'kyoto', 'seoul', 'hawaii']);
+      return valid.has(seg) ? seg : 'tokyo';
+    })();
+    const firstCity = getAreaCityOptions(initialArea)[0]?.name;
+    return createLocationFilterFromArea(initialArea, firstCity);
+  });
   const areaOptions = AREA_OPTIONS;
   const areaCityOptions = useMemo(() => getAreaCityOptions(locationFilter.areaKey), [locationFilter.areaKey]);
 
