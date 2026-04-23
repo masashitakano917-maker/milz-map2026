@@ -23,6 +23,16 @@ html, body, #root {
   background: #fcfcfb !important;
 }
 
+.leaflet-control-attribution,
+.leaflet-control-attribution a,
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right,
+a[href*="maptiler.com"],
+img[alt*="MapTiler"] {
+  display: none !important;
+}
+
 /* Glassmorphism utility */
 .glass {
   background: rgba(255, 255, 255, 0.7);

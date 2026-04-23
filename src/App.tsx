@@ -5452,14 +5452,14 @@ Return ONLY valid JSON matching the schema.`;
                   onFocusHandled={() => setPendingMapFocus(null)}
                 />
               ) : (
-                <MapContainer 
-                  center={TOKYO_CENTER} 
-                  zoom={DEFAULT_ZOOM} 
+                <MapContainer
+                  center={TOKYO_CENTER}
+                  zoom={DEFAULT_ZOOM}
                   className={cn("h-full w-full transition-all duration-700")}
                   zoomControl={false}
+                  attributionControl={false}
                 >
                   <TileLayer
-                    attribution={activeMapTheme.attribution}
                     url={activeMapTheme.url}
                     opacity={1}
                   />
