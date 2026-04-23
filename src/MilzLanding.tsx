@@ -119,7 +119,7 @@ export default function MilzLanding({
             <div className="col-span-12 md:col-span-5">
               <div className="label mb-3">§ COVER STORY</div>
               <div className="font-cond uppercase text-[32px] md:text-[42px] leading-[1.02] font-black">
-                {isJP ? '知られていないものを、編む。' : 'Curating the Unknown.'}
+                Curating the Unknown.
               </div>
             </div>
             <div className="col-span-12 md:col-span-4">
@@ -175,19 +175,9 @@ export default function MilzLanding({
         <div className="max-w-[1500px] mx-auto px-5 md:px-8 py-24 md:py-40">
           <div className="label mb-10" style={{ color: 'var(--gray-500)' }}>§ 01 — EDITOR'S NOTE</div>
           <div className="font-display text-[13vw] md:text-[9vw] leading-[0.92] tracking-[-0.01em]">
-            {isJP ? (
-              <>
-                AIが答えるのは、<br />
-                メジャーだけ。<br />
-                MILZ は<span className="italic">その先を</span>編む。
-              </>
-            ) : (
-              <>
-                AI COVERS<br />
-                THE MAINSTREAM.<br />
-                MILZ <span className="italic">GOES</span> FURTHER.
-              </>
-            )}
+            AI COVERS<br />
+            THE MAINSTREAM.<br />
+            MILZ <span className="italic">GOES</span> FURTHER.
           </div>
           <div className="mt-16 flex justify-between items-center border-t border-white/30 pt-6">
             <div className="label" style={{ color: 'var(--gray-500)' }}>— MILZ MMXXV</div>
@@ -202,7 +192,7 @@ export default function MilzLanding({
             <div>
               <div className="label mb-4">§ 02 — PRINCIPLES</div>
               <h2 className="font-display text-[16vw] md:text-[10vw] leading-[0.85]">
-                {isJP ? '3つの、やくそく。' : 'THREE RULES.'}
+                THREE RULES.
               </h2>
             </div>
             <div className="max-w-sm text-[14px] leading-[1.9] text-[var(--gray-700)]">
@@ -216,24 +206,24 @@ export default function MilzLanding({
             {[
               {
                 n: '01',
-                t: isJP ? '未知' : 'UNKNOWN',
-                s: isJP ? 'を、編む。' : 'FIRST.',
+                t: 'UNKNOWN',
+                s: 'FIRST.',
                 d: isJP
                   ? 'メジャーはAIに任せる。MILZ が追うのは、まだ名前の知られていない場所、人、サービス。そこにしか残らない空気を、編集で残す。'
                   : 'AI already covers the mainstream. MILZ follows what is still unnamed — the places, people, and services.',
               },
               {
                 n: '02',
-                t: isJP ? '空気' : 'ATMOSPHERE',
-                s: isJP ? 'の、細部。' : 'IN DETAIL.',
+                t: 'ATMOSPHERE',
+                s: 'IN DETAIL.',
                 d: isJP
                   ? '評点ではなく、ディテール。光、音、間、距離感。訪れる前から空気を感じられる情報だけを、ひとつずつ手渡しで。'
                   : 'Not ratings. Details. Light, sound, pace, distance. Only the notes that let you feel the atmosphere before you arrive — handed over one by one.',
               },
               {
                 n: '03',
-                t: isJP ? '基準' : 'ONE',
-                s: isJP ? 'は、ひとつ。' : 'STANDARD.',
+                t: 'ONE',
+                s: 'STANDARD.',
                 d: isJP
                   ? 'ジャンルは関係ない。食、コーヒー、宿、工芸、眺め、人。分野ではなく、ひとつの線引きだけで答える。'
                   : 'Category is irrelevant. Food, coffee, stays, craft, views, people. One line is drawn — and every answer comes from it.',
