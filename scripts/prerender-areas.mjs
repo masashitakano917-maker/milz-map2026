@@ -12,14 +12,14 @@ const SITE = 'https://milz-map.com';
 const AREAS = [
   {
     slug: 'tokyo',
-    title: 'Tokyo curated city map — cafes, restaurants, hidden spots | MILZ',
+    title: '東京 旅行・観光ガイド｜Tokyo travel map — カフェ・レストラン・隠れスポット | MILZ',
     description:
-      'Explore a curated Tokyo map across Shibuya, Shinjuku, Ginza, Asakusa and Jiyugaoka. Filter by ward or JR / Tokyo Metro station, save favorites, and see AI-picked Tokyo trends.',
-    h1: 'Tokyo curated city map',
+      '東京の旅・旅行・観光に使える厳選マップ。渋谷・新宿・銀座・浅草・自由が丘などのカフェ、レストラン、ショップ、隠れスポットを区や駅(JR山手線・東京メトロ)から検索。お気に入り保存、AIが選ぶ東京トレンドも。Tokyo travel guide and curated city map.',
+    h1: '東京 旅行・観光マップ / Tokyo curated travel map',
     locale: 'ja_JP',
     lang: 'ja',
     keywords:
-      'Tokyo map, Shibuya cafe, Shinjuku restaurant, Ginza, Asakusa, Jiyugaoka, JR Yamanote, Tokyo Metro, curated Tokyo guide',
+      '東京, 東京 旅行, 東京 観光, 東京 マップ, 旅, 旅行, 観光, travel, Tokyo travel, Tokyo map, Tokyo guide, 渋谷 カフェ, 新宿 レストラン, 銀座, 浅草, 自由が丘, 中目黒, 代官山, 六本木, 吉祥寺, JR山手線, 東京メトロ, 東京 おすすめ, 東京 グルメ, 東京 スポット, curated Tokyo guide',
     geo: { lat: 35.6812, lng: 139.7671, name: 'Tokyo, Japan' },
     highlights: [
       'Shibuya', 'Shinjuku', 'Minato', 'Ginza', 'Asakusa', 'Nakameguro',
@@ -28,14 +28,14 @@ const AREAS = [
   },
   {
     slug: 'new-york',
-    title: 'New York curated city map — Manhattan & Brooklyn spots | MILZ',
+    title: 'New York travel guide & curated city map — Manhattan, Brooklyn | MILZ',
     description:
-      'A curated New York map covering Manhattan, Williamsburg, SoHo, Chelsea and the Upper East Side. Filter by borough or subway station, save favorites, discover AI-picked NY trends.',
-    h1: 'New York curated city map',
+      'A curated New York travel guide and map covering Manhattan, Williamsburg, SoHo, Chelsea and the Upper East Side. Filter by borough or subway station, save favorites, discover AI-picked NYC trends. ニューヨーク 旅行・観光マップ。',
+    h1: 'New York travel guide & curated map',
     locale: 'en_US',
     lang: 'en',
     keywords:
-      'New York map, Manhattan spots, Williamsburg, SoHo, Chelsea, Brooklyn cafes, NYC subway guide, curated NY guide',
+      'New York travel, NYC travel guide, New York map, Manhattan, Williamsburg, SoHo, Chelsea, Brooklyn, Upper East Side, Tribeca, DUMBO, NYC subway, things to do NYC, New York cafes, New York restaurants, ニューヨーク, ニューヨーク 旅行, ニューヨーク 観光, NY 旅行, travel, 旅, 旅行, 観光, curated NY guide',
     geo: { lat: 40.758, lng: -73.9855, name: 'New York, USA' },
     highlights: [
       'Manhattan', 'Williamsburg', 'SoHo', 'Chelsea', 'Upper East Side',
@@ -44,14 +44,14 @@ const AREAS = [
   },
   {
     slug: 'kyoto',
-    title: 'Kyoto curated city map — temples, tea houses, coffee | MILZ',
+    title: '京都 旅行・観光ガイド｜Kyoto travel map — 寺社・町家・カフェ | MILZ',
     description:
-      'A curated Kyoto map across Gion, Higashiyama, Arashiyama, Nakagyo and Fushimi. Filter by ward or JR / Hankyu / Keihan station, save favorites, and see AI-picked Kyoto trends.',
-    h1: 'Kyoto curated city map',
+      '京都の旅・旅行・観光に使える厳選マップ。祇園・東山・嵐山・中京・伏見などの寺社、町家カフェ、レストラン、隠れスポットを区や駅(JR・阪急・京阪)から検索。お気に入り保存、AIが選ぶ京都トレンドも。Kyoto travel guide with temples, tea houses and coffee.',
+    h1: '京都 旅行・観光マップ / Kyoto curated travel map',
     locale: 'ja_JP',
     lang: 'ja',
     keywords:
-      'Kyoto map, Gion, Higashiyama, Arashiyama, Nakagyo, Fushimi Inari, Hankyu Kyoto, Keihan, curated Kyoto guide',
+      '京都, 京都 旅行, 京都 観光, 京都 マップ, 京都 おすすめ, 京都 グルメ, 京都 カフェ, 祇園, 東山, 嵐山, 中京, 伏見稲荷, 宇治, 下京, 阪急京都線, 京阪電車, 旅, 旅行, 観光, 国内旅行, travel, Kyoto travel, Kyoto guide, Kyoto map, temples Kyoto, tea house Kyoto, curated Kyoto guide',
     geo: { lat: 35.0116, lng: 135.7681, name: 'Kyoto, Japan' },
     highlights: [
       'Gion', 'Higashiyama', 'Arashiyama', 'Nakagyo', 'Sakyo',
@@ -60,14 +60,14 @@ const AREAS = [
   },
   {
     slug: 'seoul',
-    title: 'Seoul curated city map — Hongdae, Seongsu, Itaewon | MILZ',
+    title: 'Seoul travel guide — Hongdae, Seongsu, Itaewon | ソウル 旅行マップ | MILZ',
     description:
-      'A curated Seoul map spanning Hongdae, Seongsu, Itaewon, Gangnam and Ikseon-dong. Filter by district, save favorites, and see AI-picked Seoul trends.',
-    h1: 'Seoul curated city map',
+      'Seoul travel guide and curated city map covering Hongdae, Seongsu, Itaewon, Gangnam and Ikseon-dong. Filter by district, save favorites, discover AI-picked Seoul trends. ソウルの旅・旅行・観光に使える厳選マップ。韓国旅行のカフェ、レストラン、ショッピング、隠れスポットを地区から検索。',
+    h1: 'Seoul travel guide & curated map / ソウル 旅行マップ',
     locale: 'ko_KR',
     lang: 'en',
     keywords:
-      'Seoul map, Hongdae, Seongsu, Itaewon, Gangnam, Ikseon-dong, curated Seoul guide',
+      'Seoul travel, Seoul guide, Seoul map, Hongdae, Seongsu, Itaewon, Gangnam, Ikseon-dong, Myeongdong, Yeonnam, Bukchon, Samcheong, Korea travel, Korean cafe, K-food, K-beauty, ソウル, ソウル 旅行, ソウル 観光, 韓国 旅行, 韓国 観光, 弘大, 聖水洞, 梨泰院, 江南, 旅, 旅行, 観光, travel, curated Seoul guide',
     geo: { lat: 37.5665, lng: 126.978, name: 'Seoul, South Korea' },
     highlights: [
       'Hongdae', 'Seongsu', 'Itaewon', 'Gangnam', 'Ikseon-dong',
@@ -76,14 +76,14 @@ const AREAS = [
   },
   {
     slug: 'hawaii',
-    title: 'Hawaii curated map — Oahu, Maui, Big Island spots | MILZ',
+    title: 'Hawaii travel guide — Oahu, Maui, Big Island | ハワイ 旅行マップ | MILZ',
     description:
-      'A curated Hawaii map across Oahu, Maui and the Big Island. Discover beaches, cafes, restaurants and hidden spots, save favorites, and see AI-picked Hawaii trends.',
-    h1: 'Hawaii curated map',
+      'Hawaii travel guide and curated map across Oahu, Maui and the Big Island. Discover beaches, cafes, restaurants, shopping and hidden spots. ハワイの旅・旅行・観光に使える厳選マップ。ワイキキ・カイルア・ノースショア・マウイ・ハワイ島のビーチ、カフェ、レストランを検索。',
+    h1: 'Hawaii travel guide & curated map / ハワイ 旅行マップ',
     locale: 'en_US',
     lang: 'en',
     keywords:
-      'Hawaii map, Oahu spots, Waikiki, North Shore, Maui, Big Island, Kailua, curated Hawaii guide',
+      'Hawaii travel, Hawaii guide, Hawaii map, Oahu, Waikiki, North Shore, Haleiwa, Kailua, Maui, Big Island, Kona, Hilo, Lahaina, Wailea, Kaanapali, Ko Olina, Hawaii beaches, things to do Hawaii, Hawaii vacation, ハワイ, ハワイ 旅行, ハワイ 観光, ワイキキ, マウイ, ハワイ島, 海外旅行, リゾート, ビーチ, 旅, 旅行, 観光, travel, curated Hawaii guide',
     geo: { lat: 21.3069, lng: -157.8583, name: 'Honolulu, Hawaii, USA' },
     highlights: [
       'Waikiki', 'Kailua', 'North Shore', 'Lahaina', 'Wailea',
