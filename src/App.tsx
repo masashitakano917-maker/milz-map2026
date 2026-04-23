@@ -1387,7 +1387,7 @@ const findAreaOption = (areaKey?: string | null) => AREA_OPTIONS.find((item) => 
 
 const createLocationFilterFromArea = (areaKey: string, cityName?: string) => {
   const area = findAreaOption(areaKey);
-  const city = area.cities.find((item) => item.name === cityName) || area.cities[0] || null;
+  const city = cityName ? area.cities.find((item) => item.name === cityName) || null : null;
   return {
     areaKey: area.key,
     areaName: area.label,
