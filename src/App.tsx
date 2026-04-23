@@ -333,7 +333,10 @@ interface AdminStats {
   area_views: { area_key: string; views: number }[];
   top_area: string | null;
   video_plays: number;
-  top_favorites_per_area: Record<string, { place_id: string; name: string; count: number }[]>;
+  total_spots: number;
+  top_favorites: { place_id: string; name: string; area_key: string; cnt: number }[];
+  top_ai_favorites: { key: string; name: string; area_key: string; cnt: number }[];
+  top_ai_trend_favorites: { key: string; name: string; area_key: string; cnt: number }[];
   window_hours: number;
 }
 
@@ -344,6 +347,45 @@ const AREA_LABEL: Record<string, string> = {
   seoul: 'Seoul',
   hawaii: 'Hawaii',
 };
+
+function TopFavList({
+  title,
+  accent,
+  items,
+  emptyLabel,
+}: {
+  title: string;
+  accent: string;
+  items: { key: string; name: string; area_key: string; cnt: number }[];
+  emptyLabel: string;
+}) {
+  return (
+    <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className={cn('inline-block w-2 h-2 rounded-full', accent)} />
+        <div className="text-[11px] font-black uppercase tracking-[0.2em] text-black">{title}</div>
+      </div>
+      {items.length === 0 ? (
+        <div className="text-sm text-stone-500">{emptyLabel}</div>
+      ) : (
+        <ol className="space-y-1.5">
+          {items.map((it, i) => (
+            <li key={it.key} className="flex items-baseline gap-2 text-sm">
+              <span className="w-5 text-[10px] font-black text-stone-400 tabular-nums">{i + 1}.</span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-stone-900 truncate">{it.name}</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">
+                  {AREA_LABEL[it.area_key] || it.area_key}
+                </span>
+              </span>
+              <span className="text-[11px] font-bold text-stone-600 tabular-nums">{it.cnt}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
 
 function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
   const [windowKey, setWindowKey] = useState<AdminStatsWindow>('daily');
@@ -432,7 +474,7 @@ function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
 
       {stats && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
             <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
                 {locale === 'jp' ? '総ユーザー数' : 'Total users'}
@@ -440,6 +482,15 @@ function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
               <div className="mt-2 text-3xl font-black tracking-tight text-black">{stats.user_count.toLocaleString()}</div>
               <div className="mt-1 text-[10px] font-medium text-stone-500">
                 +{stats.new_users} {locale === 'jp' ? '新規' : 'new'}
+              </div>
+            </div>
+            <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                {locale === 'jp' ? '登録スポット数' : 'Registered spots'}
+              </div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-black">{stats.total_spots.toLocaleString()}</div>
+              <div className="mt-1 text-[10px] font-medium text-stone-500">
+                {locale === 'jp' ? '累計' : 'all-time'}
               </div>
             </div>
             <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
@@ -491,33 +542,25 @@ function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
             )}
           </div>
 
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-400 mb-3">
-              {locale === 'jp' ? 'お気に入りTOP10（エリア別）' : 'Top 10 favorites (by area)'}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {Object.keys(stats.top_favorites_per_area).length === 0 && (
-                <div className="rounded-[1.2rem] border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500 md:col-span-2 xl:col-span-3">
-                  {locale === 'jp' ? 'この期間のお気に入り登録はまだありません。' : 'No favorites recorded in this window yet.'}
-                </div>
-              )}
-              {Object.entries(stats.top_favorites_per_area).map(([areaKey, items]) => (
-                <div key={areaKey} className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
-                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-black mb-3">
-                    {AREA_LABEL[areaKey] || areaKey}
-                  </div>
-                  <ol className="space-y-1.5">
-                    {items.map((it, i) => (
-                      <li key={it.place_id} className="flex items-baseline gap-2 text-sm">
-                        <span className="w-5 text-[10px] font-black text-stone-400 tabular-nums">{i + 1}.</span>
-                        <span className="flex-1 text-stone-800 truncate">{it.name}</span>
-                        <span className="text-[11px] font-bold text-stone-500 tabular-nums">{it.count}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </div>
+          <div className="grid gap-4 xl:grid-cols-3">
+            <TopFavList
+              title={locale === 'jp' ? 'スポット お気に入りTOP10' : 'Top 10 favorited spots'}
+              accent="bg-black"
+              items={stats.top_favorites.map((f) => ({ key: f.place_id, name: f.name, area_key: f.area_key, cnt: f.cnt }))}
+              emptyLabel={locale === 'jp' ? 'お気に入り登録はまだありません。' : 'No favorites yet.'}
+            />
+            <TopFavList
+              title={locale === 'jp' ? 'AI Recommendation TOP10' : 'Top 10 AI recommendations'}
+              accent="bg-stone-800"
+              items={stats.top_ai_favorites.map((f) => ({ key: f.key, name: f.name, area_key: f.area_key, cnt: f.cnt }))}
+              emptyLabel={locale === 'jp' ? 'AIおすすめの保存はまだありません。' : 'No AI favorites yet.'}
+            />
+            <TopFavList
+              title={locale === 'jp' ? 'AI Trend TOP10' : 'Top 10 AI trends'}
+              accent="bg-rose-500"
+              items={stats.top_ai_trend_favorites.map((f) => ({ key: f.key, name: f.name, area_key: f.area_key, cnt: f.cnt }))}
+              emptyLabel={locale === 'jp' ? 'AIトレンドの保存はまだありません。' : 'No AI trend favorites yet.'}
+            />
           </div>
         </>
       )}
@@ -5815,9 +5858,16 @@ Return ONLY valid JSON matching the schema.`;
                   { key: 'seoul', label: 'SEOUL' },
                   { key: 'hawaii', label: 'HAWAII' },
                 ];
-                const listSource = homeCityFilter === 'all'
-                  ? filteredPlaces
-                  : filteredPlaces.filter((p) => p.area_key === homeCityFilter);
+                const listSource = (() => {
+                  const q = searchQuery.toLowerCase();
+                  const matchesQuery = (p: Place) => {
+                    if (!q) return true;
+                    return [p.name, p.description, p.address, p.municipality, p.area_label]
+                      .filter(Boolean).join(' ').toLowerCase().includes(q);
+                  };
+                  if (homeCityFilter === 'all') return places.filter(matchesQuery);
+                  return places.filter((p) => p.area_key === homeCityFilter && matchesQuery(p));
+                })();
                 const marqueeItems = [
                   'ISSUE N°001',
                   'FINDING THE UNKNOWN',
@@ -5851,7 +5901,7 @@ Return ONLY valid JSON matching the schema.`;
                       </div>
                       <div className="hidden md:block text-right text-[10px] tracking-[0.3em] text-stone-400 uppercase font-black">
                         <div>MILZ / ISSUE 001</div>
-                        <div className="mt-1 tabular-nums">{filteredPlaces.length} ENTRIES</div>
+                        <div className="mt-1 tabular-nums">{listSource.length} ENTRIES</div>
                       </div>
                     </div>
 
