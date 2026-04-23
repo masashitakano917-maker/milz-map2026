@@ -7,7 +7,7 @@ const distDir = join(__dirname, '..', 'dist');
 const templatePath = join(distDir, 'index.html');
 const template = readFileSync(templatePath, 'utf8');
 
-const SITE = 'https://milz-map2026.pages.dev';
+const SITE = 'https://milz-map.com';
 
 const AREAS = [
   {

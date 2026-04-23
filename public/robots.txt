@@ -16,4 +16,4 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://milz-map2026.pages.dev/sitemap.xml
+Sitemap: https://milz-map.com/sitemap.xml
