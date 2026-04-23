@@ -711,18 +711,7 @@ const buildAreaCityOptions = (area: AreaOption): AreaCityOption[] => {
   area.cities.forEach(register);
   (SPECIAL_AREA_CITIES[area.key] || []).forEach(register);
 
-  try {
-    City.getCitiesOfState(area.countryCode, area.stateCode).forEach((city) => {
-      const lat = Number(city.latitude);
-      const lng = Number(city.longitude);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      register({ name: city.name, center: [lat, lng], zoom: area.zoom || 12 });
-    });
-  } catch (error) {
-    console.warn(`Failed to build city list for ${area.label}`, error);
-  }
-
-  return Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name));
+  return Array.from(merged.values());
 };
 
 const BASE_AREA_OPTIONS: AreaOption[] = [
@@ -755,11 +744,35 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     zoom: 12,
     aliases: ['tokyo', '渋谷', '新宿', '港区', '世田谷', '目黒'],
     cities: [
-      { name: 'Shibuya', center: [35.6595, 139.7005], zoom: 14 },
-      { name: 'Shinjuku', center: [35.6938, 139.7034], zoom: 14 },
+      { name: 'Chiyoda', center: [35.6940, 139.7536], zoom: 14 },
+      { name: 'Chuo', center: [35.6706, 139.7720], zoom: 14 },
       { name: 'Minato', center: [35.6581, 139.7516], zoom: 14 },
+      { name: 'Shinjuku', center: [35.6938, 139.7034], zoom: 14 },
+      { name: 'Bunkyo', center: [35.7080, 139.7523], zoom: 14 },
+      { name: 'Taito', center: [35.7126, 139.7799], zoom: 14 },
+      { name: 'Sumida', center: [35.7108, 139.8014], zoom: 14 },
+      { name: 'Koto', center: [35.6727, 139.8171], zoom: 13 },
+      { name: 'Shinagawa', center: [35.6092, 139.7302], zoom: 14 },
       { name: 'Meguro', center: [35.6415, 139.6982], zoom: 14 },
-      { name: 'Setagaya', center: [35.6466, 139.653], zoom: 13 },
+      { name: 'Ota', center: [35.5614, 139.7161], zoom: 13 },
+      { name: 'Setagaya', center: [35.6466, 139.6530], zoom: 13 },
+      { name: 'Shibuya', center: [35.6595, 139.7005], zoom: 14 },
+      { name: 'Nakano', center: [35.7074, 139.6637], zoom: 14 },
+      { name: 'Suginami', center: [35.6995, 139.6364], zoom: 13 },
+      { name: 'Toshima', center: [35.7262, 139.7162], zoom: 14 },
+      { name: 'Kita', center: [35.7527, 139.7334], zoom: 14 },
+      { name: 'Arakawa', center: [35.7362, 139.7836], zoom: 14 },
+      { name: 'Itabashi', center: [35.7510, 139.7094], zoom: 13 },
+      { name: 'Nerima', center: [35.7357, 139.6518], zoom: 13 },
+      { name: 'Adachi', center: [35.7750, 139.8046], zoom: 13 },
+      { name: 'Katsushika', center: [35.7437, 139.8474], zoom: 13 },
+      { name: 'Edogawa', center: [35.7067, 139.8683], zoom: 13 },
+      { name: 'Musashino', center: [35.7177, 139.5667], zoom: 13 },
+      { name: 'Mitaka', center: [35.6836, 139.5595], zoom: 13 },
+      { name: 'Tachikawa', center: [35.6938, 139.4195], zoom: 13 },
+      { name: 'Hachioji', center: [35.6663, 139.3260], zoom: 12 },
+      { name: 'Machida', center: [35.5485, 139.4386], zoom: 12 },
+      { name: 'Chofu', center: [35.6505, 139.5412], zoom: 13 },
     ],
   },
   {
@@ -773,11 +786,17 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     zoom: 12,
     aliases: ['kyoto', '京都', '祇園', '東山', '伏見'],
     cities: [
-      { name: 'Nakagyo', center: [35.0102, 135.751], zoom: 14 },
-      { name: 'Shimogyo', center: [34.9875, 135.7594], zoom: 14 },
-      { name: 'Higashiyama', center: [34.9965, 135.7788], zoom: 14 },
-      { name: 'Sakyo', center: [35.0422, 135.7785], zoom: 13 },
-      { name: 'Fushimi', center: [34.936, 135.7617], zoom: 13 },
+      { name: 'Kamigyo', center: [35.0297, 135.7563], zoom: 14 },
+      { name: 'Kita', center: [35.0518, 135.7525], zoom: 13 },
+      { name: 'Sakyo', center: [35.0434, 135.7786], zoom: 13 },
+      { name: 'Nakagyo', center: [35.0101, 135.7515], zoom: 14 },
+      { name: 'Higashiyama', center: [34.9968, 135.7784], zoom: 14 },
+      { name: 'Shimogyo', center: [34.9877, 135.7595], zoom: 14 },
+      { name: 'Minami', center: [34.9769, 135.7463], zoom: 13 },
+      { name: 'Ukyo', center: [35.0105, 135.6978], zoom: 13 },
+      { name: 'Fushimi', center: [34.9362, 135.7614], zoom: 13 },
+      { name: 'Yamashina', center: [34.9721, 135.8144], zoom: 13 },
+      { name: 'Nishikyo', center: [34.9858, 135.6934], zoom: 13 },
     ],
   },
   {
@@ -791,11 +810,31 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     zoom: 12,
     aliases: ['seoul', '서울', 'gangnam', 'mapo', 'yongsan'],
     cities: [
-      { name: 'Gangnam-gu', center: [37.5172, 127.0473], zoom: 14 },
-      { name: 'Jongno-gu', center: [37.5735, 126.979], zoom: 14 },
-      { name: 'Mapo-gu', center: [37.5663, 126.9019], zoom: 14 },
+      { name: 'Jongno-gu', center: [37.5735, 126.9790], zoom: 14 },
+      { name: 'Jung-gu', center: [37.5636, 126.9976], zoom: 14 },
       { name: 'Yongsan-gu', center: [37.5326, 126.9905], zoom: 14 },
-      { name: 'Seongsu', center: [37.5447, 127.0557], zoom: 14 },
+      { name: 'Seongdong-gu', center: [37.5633, 127.0368], zoom: 14 },
+      { name: 'Gwangjin-gu', center: [37.5384, 127.0822], zoom: 14 },
+      { name: 'Dongdaemun-gu', center: [37.5744, 127.0396], zoom: 14 },
+      { name: 'Jungnang-gu', center: [37.6063, 127.0925], zoom: 13 },
+      { name: 'Seongbuk-gu', center: [37.5894, 127.0167], zoom: 13 },
+      { name: 'Gangbuk-gu', center: [37.6396, 127.0257], zoom: 13 },
+      { name: 'Dobong-gu', center: [37.6687, 127.0471], zoom: 13 },
+      { name: 'Nowon-gu', center: [37.6542, 127.0568], zoom: 13 },
+      { name: 'Eunpyeong-gu', center: [37.6176, 126.9227], zoom: 13 },
+      { name: 'Seodaemun-gu', center: [37.5791, 126.9368], zoom: 14 },
+      { name: 'Mapo-gu', center: [37.5663, 126.9019], zoom: 14 },
+      { name: 'Yangcheon-gu', center: [37.5170, 126.8664], zoom: 13 },
+      { name: 'Gangseo-gu', center: [37.5509, 126.8495], zoom: 13 },
+      { name: 'Guro-gu', center: [37.4955, 126.8874], zoom: 13 },
+      { name: 'Geumcheon-gu', center: [37.4569, 126.8955], zoom: 13 },
+      { name: 'Yeongdeungpo-gu', center: [37.5264, 126.8963], zoom: 14 },
+      { name: 'Dongjak-gu', center: [37.5124, 126.9393], zoom: 14 },
+      { name: 'Gwanak-gu', center: [37.4784, 126.9516], zoom: 13 },
+      { name: 'Seocho-gu', center: [37.4837, 127.0324], zoom: 14 },
+      { name: 'Gangnam-gu', center: [37.5172, 127.0473], zoom: 14 },
+      { name: 'Songpa-gu', center: [37.5145, 127.1060], zoom: 14 },
+      { name: 'Gangdong-gu', center: [37.5301, 127.1238], zoom: 13 },
     ],
   },
   {
@@ -811,9 +850,20 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     cities: [
       { name: 'Honolulu', center: [21.3069, -157.8583], zoom: 13 },
       { name: 'Waikiki', center: [21.2767, -157.8275], zoom: 14 },
+      { name: 'Ala Moana', center: [21.2912, -157.8436], zoom: 14 },
+      { name: 'Kakaako', center: [21.2950, -157.8540], zoom: 14 },
+      { name: 'Pearl City', center: [21.3972, -157.9753], zoom: 13 },
+      { name: 'Ko Olina', center: [21.3369, -158.1260], zoom: 13 },
       { name: 'Kailua', center: [21.4022, -157.7394], zoom: 13 },
-      { name: 'North Shore', center: [21.664, -158.051], zoom: 12 },
-      { name: 'Hilo', center: [19.7076, -155.0885], zoom: 13 },
+      { name: 'Kaneohe', center: [21.4180, -157.8036], zoom: 13 },
+      { name: 'North Shore (Haleiwa)', center: [21.5928, -158.1039], zoom: 12 },
+      { name: 'Lahaina (Maui)', center: [20.8783, -156.6825], zoom: 13 },
+      { name: 'Wailea (Maui)', center: [20.6844, -156.4417], zoom: 13 },
+      { name: 'Kihei (Maui)', center: [20.7644, -156.4450], zoom: 13 },
+      { name: 'Hilo (Big Island)', center: [19.7076, -155.0885], zoom: 13 },
+      { name: 'Kailua-Kona (Big Island)', center: [19.6400, -155.9969], zoom: 13 },
+      { name: 'Lihue (Kauai)', center: [21.9811, -159.3711], zoom: 13 },
+      { name: 'Princeville (Kauai)', center: [22.2225, -159.4877], zoom: 13 },
     ],
   },
 ];
