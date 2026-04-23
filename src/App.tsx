@@ -2411,8 +2411,7 @@ export default function App() {
       const valid = new Set(['tokyo', 'new-york', 'kyoto', 'seoul', 'hawaii']);
       return valid.has(seg) ? seg : 'tokyo';
     })();
-    const firstCity = getAreaCityOptions(initialArea)[0]?.name;
-    return createLocationFilterFromArea(initialArea, firstCity);
+    return createLocationFilterFromArea(initialArea);
   });
   const areaOptions = AREA_OPTIONS;
   const areaCityOptions = useMemo(() => getAreaCityOptions(locationFilter.areaKey), [locationFilter.areaKey]);
@@ -4482,13 +4481,26 @@ export default function App() {
     focusMapOnCoords(target);
   };
 
-  const handlePlaceViewOnMap = (rec: { lat: number; lng: number }) => {
+  const handlePlaceViewOnMap = (rec: { lat: number; lng: number; area_key?: string | null; municipality?: string | null; address?: string | null }) => {
     const normalized = normalizeMapCoords(rec.lat, rec.lng);
     if (!normalized) {
       showToast(locale === 'jp' ? '地図へ移動できる座標が見つかりませんでした。' : 'No valid coordinates were found for this spot.', 'error');
       return;
     }
 
+    const placeAreaKey = rec.area_key || resolvePlaceAreaKey({ lat: normalized.lat, lng: normalized.lng, municipality: rec.municipality, address: rec.address });
+    const placeCityName = resolvePlaceCityName({ municipality: rec.municipality, address: rec.address }, placeAreaKey);
+
+    setLocationFilter((prev) => {
+      if (prev.areaKey === placeAreaKey && (!placeCityName || prev.cityName === placeCityName || !prev.cityName)) {
+        return prev;
+      }
+      return createLocationFilterFromArea(placeAreaKey, placeCityName || undefined);
+    });
+    setSelectedStationId('');
+    setSearchQuery('');
+    setSelectedCategory('all');
+    setSelectedBadge('all');
     setTempAiPin(null);
     focusMapOnCoords({ lat: normalized.lat, lng: normalized.lng });
   };
@@ -6271,7 +6283,7 @@ Return ONLY valid JSON matching the schema.`;
                               <div className="ml-auto flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => handlePlaceViewOnMap({ lat: place.lat, lng: place.lng })}
+                                  onClick={() => handlePlaceViewOnMap({ lat: place.lat, lng: place.lng, area_key: place.area_key, municipality: place.municipality, address: place.address })}
                                   className="px-4 py-3 border border-stone-200 text-stone-500 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-2 hover:border-black hover:text-black transition-all"
                                 >
                                   <MapPin className="w-3 h-3" />
@@ -7241,7 +7253,7 @@ Return ONLY valid JSON matching the schema.`;
                                 <span
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePlaceViewOnMap({ lat: place.lat, lng: place.lng });
+                                    handlePlaceViewOnMap({ lat: place.lat, lng: place.lng, area_key: place.area_key, municipality: place.municipality, address: place.address });
                                   }}
                                   className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 group-hover:text-black"
                                 >
@@ -8827,7 +8839,7 @@ Return ONLY valid JSON matching the schema.`;
                             </button>
                             <button 
                               onClick={() => {
-                                handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng });
+                                handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng, area_key: selectedPlaceForDetail.area_key, municipality: selectedPlaceForDetail.municipality, address: selectedPlaceForDetail.address });
                               }}
                               className="w-full py-5 bg-white border border-black text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-stone-50 transition-colors flex items-center justify-center gap-2 rounded-xl"
                             >
@@ -8847,7 +8859,7 @@ Return ONLY valid JSON matching the schema.`;
                           </div>
                           <button
                             type="button"
-                            onClick={() => handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng })}
+                            onClick={() => handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng, area_key: selectedPlaceForDetail.area_key, municipality: selectedPlaceForDetail.municipality, address: selectedPlaceForDetail.address })}
                             className="text-[10px] font-black uppercase tracking-[0.25em] text-black hover:text-stone-500 transition-colors"
                           >
                             {detailViewOnMapLabel}
@@ -8857,7 +8869,7 @@ Return ONLY valid JSON matching the schema.`;
                           lat={selectedPlaceForDetail.lat}
                           lng={selectedPlaceForDetail.lng}
                           name={selectedPlaceForDetail.name}
-                          onOpenMap={() => handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng })}
+                          onOpenMap={() => handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng, area_key: selectedPlaceForDetail.area_key, municipality: selectedPlaceForDetail.municipality, address: selectedPlaceForDetail.address })}
                         />
                       </div>
 
