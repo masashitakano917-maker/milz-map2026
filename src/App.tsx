@@ -4976,7 +4976,7 @@ Return ONLY valid JSON matching the schema.`;
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="bg-white/90 backdrop-blur-md shadow-2xl border border-stone-200 p-5 md:p-8 space-y-6 md:space-y-8 rounded-[2rem] md:rounded-[2.5rem] max-h-[calc(100svh-10rem)] overflow-y-auto"
+                      className="bg-white/95 backdrop-blur-md shadow-2xl border border-stone-200 p-5 md:p-8 space-y-6 md:space-y-8 rounded-[2rem] md:rounded-[2.5rem] max-h-[calc(100svh-16rem)] md:max-h-[calc(100svh-12rem)] overflow-y-auto mb-28 md:mb-8"
                     >
                       <div className="space-y-6">
                         <div className="flex items-center gap-3 mb-2">
