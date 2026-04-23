@@ -591,6 +591,7 @@ interface FilterOptionRecord {
 
 interface AreaCityOption {
   name: string;
+  name_jp?: string;
   center: [number, number];
   zoom?: number;
 }
@@ -652,19 +653,7 @@ const DEFAULT_CATEGORY_OPTIONS = ['カフェ', 'レストラン', 'ショッピ�
 const DEFAULT_BADGE_OPTIONS = ['Yukie Fav', 'Pet Friendly'];
 
 const SPECIAL_AREA_CITIES: Record<string, AreaCityOption[]> = {
-  kyoto: [
-    { name: 'Kamigyo', center: [35.0297, 135.7563], zoom: 14 },
-    { name: 'Kita', center: [35.0518, 135.7525], zoom: 13 },
-    { name: 'Sakyo', center: [35.0434, 135.7786], zoom: 13 },
-    { name: 'Nakagyo', center: [35.0101, 135.7515], zoom: 14 },
-    { name: 'Higashiyama', center: [34.9968, 135.7784], zoom: 14 },
-    { name: 'Shimogyo', center: [34.9877, 135.7595], zoom: 14 },
-    { name: 'Minami', center: [34.9769, 135.7463], zoom: 13 },
-    { name: 'Ukyo', center: [35.0105, 135.6978], zoom: 13 },
-    { name: 'Fushimi', center: [34.9362, 135.7614], zoom: 13 },
-    { name: 'Yamashina', center: [34.9721, 135.8144], zoom: 13 },
-    { name: 'Nishikyo', center: [34.9858, 135.6934], zoom: 13 },
-  ],
+  kyoto: [],
 };
 
 const canonicalizeAreaCityKey = (value: string, areaKey: string) => value
@@ -744,35 +733,35 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     zoom: 12,
     aliases: ['tokyo', '渋谷', '新宿', '港区', '世田谷', '目黒'],
     cities: [
-      { name: 'Chiyoda', center: [35.6940, 139.7536], zoom: 14 },
-      { name: 'Chuo', center: [35.6706, 139.7720], zoom: 14 },
-      { name: 'Minato', center: [35.6581, 139.7516], zoom: 14 },
-      { name: 'Shinjuku', center: [35.6938, 139.7034], zoom: 14 },
-      { name: 'Bunkyo', center: [35.7080, 139.7523], zoom: 14 },
-      { name: 'Taito', center: [35.7126, 139.7799], zoom: 14 },
-      { name: 'Sumida', center: [35.7108, 139.8014], zoom: 14 },
-      { name: 'Koto', center: [35.6727, 139.8171], zoom: 13 },
-      { name: 'Shinagawa', center: [35.6092, 139.7302], zoom: 14 },
-      { name: 'Meguro', center: [35.6415, 139.6982], zoom: 14 },
-      { name: 'Ota', center: [35.5614, 139.7161], zoom: 13 },
-      { name: 'Setagaya', center: [35.6466, 139.6530], zoom: 13 },
-      { name: 'Shibuya', center: [35.6595, 139.7005], zoom: 14 },
-      { name: 'Nakano', center: [35.7074, 139.6637], zoom: 14 },
-      { name: 'Suginami', center: [35.6995, 139.6364], zoom: 13 },
-      { name: 'Toshima', center: [35.7262, 139.7162], zoom: 14 },
-      { name: 'Kita', center: [35.7527, 139.7334], zoom: 14 },
-      { name: 'Arakawa', center: [35.7362, 139.7836], zoom: 14 },
-      { name: 'Itabashi', center: [35.7510, 139.7094], zoom: 13 },
-      { name: 'Nerima', center: [35.7357, 139.6518], zoom: 13 },
-      { name: 'Adachi', center: [35.7750, 139.8046], zoom: 13 },
-      { name: 'Katsushika', center: [35.7437, 139.8474], zoom: 13 },
-      { name: 'Edogawa', center: [35.7067, 139.8683], zoom: 13 },
-      { name: 'Musashino', center: [35.7177, 139.5667], zoom: 13 },
-      { name: 'Mitaka', center: [35.6836, 139.5595], zoom: 13 },
-      { name: 'Tachikawa', center: [35.6938, 139.4195], zoom: 13 },
-      { name: 'Hachioji', center: [35.6663, 139.3260], zoom: 12 },
-      { name: 'Machida', center: [35.5485, 139.4386], zoom: 12 },
-      { name: 'Chofu', center: [35.6505, 139.5412], zoom: 13 },
+      { name: 'Chiyoda', name_jp: '千代田区', center: [35.6940, 139.7536], zoom: 14 },
+      { name: 'Chuo', name_jp: '中央区', center: [35.6706, 139.7720], zoom: 14 },
+      { name: 'Minato', name_jp: '港区', center: [35.6581, 139.7516], zoom: 14 },
+      { name: 'Shinjuku', name_jp: '新宿区', center: [35.6938, 139.7034], zoom: 14 },
+      { name: 'Bunkyo', name_jp: '文京区', center: [35.7080, 139.7523], zoom: 14 },
+      { name: 'Taito', name_jp: '台東区', center: [35.7126, 139.7799], zoom: 14 },
+      { name: 'Sumida', name_jp: '墨田区', center: [35.7108, 139.8014], zoom: 14 },
+      { name: 'Koto', name_jp: '江東区', center: [35.6727, 139.8171], zoom: 13 },
+      { name: 'Shinagawa', name_jp: '品川区', center: [35.6092, 139.7302], zoom: 14 },
+      { name: 'Meguro', name_jp: '目黒区', center: [35.6415, 139.6982], zoom: 14 },
+      { name: 'Ota', name_jp: '大田区', center: [35.5614, 139.7161], zoom: 13 },
+      { name: 'Setagaya', name_jp: '世田谷区', center: [35.6466, 139.6530], zoom: 13 },
+      { name: 'Shibuya', name_jp: '渋谷区', center: [35.6595, 139.7005], zoom: 14 },
+      { name: 'Nakano', name_jp: '中野区', center: [35.7074, 139.6637], zoom: 14 },
+      { name: 'Suginami', name_jp: '杉並区', center: [35.6995, 139.6364], zoom: 13 },
+      { name: 'Toshima', name_jp: '豊島区', center: [35.7262, 139.7162], zoom: 14 },
+      { name: 'Kita', name_jp: '北区', center: [35.7527, 139.7334], zoom: 14 },
+      { name: 'Arakawa', name_jp: '荒川区', center: [35.7362, 139.7836], zoom: 14 },
+      { name: 'Itabashi', name_jp: '板橋区', center: [35.7510, 139.7094], zoom: 13 },
+      { name: 'Nerima', name_jp: '練馬区', center: [35.7357, 139.6518], zoom: 13 },
+      { name: 'Adachi', name_jp: '足立区', center: [35.7750, 139.8046], zoom: 13 },
+      { name: 'Katsushika', name_jp: '葛飾区', center: [35.7437, 139.8474], zoom: 13 },
+      { name: 'Edogawa', name_jp: '江戸川区', center: [35.7067, 139.8683], zoom: 13 },
+      { name: 'Musashino', name_jp: '武蔵野市', center: [35.7177, 139.5667], zoom: 13 },
+      { name: 'Mitaka', name_jp: '三鷹市', center: [35.6836, 139.5595], zoom: 13 },
+      { name: 'Tachikawa', name_jp: '立川市', center: [35.6938, 139.4195], zoom: 13 },
+      { name: 'Hachioji', name_jp: '八王子市', center: [35.6663, 139.3260], zoom: 12 },
+      { name: 'Machida', name_jp: '町田市', center: [35.5485, 139.4386], zoom: 12 },
+      { name: 'Chofu', name_jp: '調布市', center: [35.6505, 139.5412], zoom: 13 },
     ],
   },
   {
@@ -786,17 +775,17 @@ const BASE_AREA_OPTIONS: AreaOption[] = [
     zoom: 12,
     aliases: ['kyoto', '京都', '祇園', '東山', '伏見'],
     cities: [
-      { name: 'Kamigyo', center: [35.0297, 135.7563], zoom: 14 },
-      { name: 'Kita', center: [35.0518, 135.7525], zoom: 13 },
-      { name: 'Sakyo', center: [35.0434, 135.7786], zoom: 13 },
-      { name: 'Nakagyo', center: [35.0101, 135.7515], zoom: 14 },
-      { name: 'Higashiyama', center: [34.9968, 135.7784], zoom: 14 },
-      { name: 'Shimogyo', center: [34.9877, 135.7595], zoom: 14 },
-      { name: 'Minami', center: [34.9769, 135.7463], zoom: 13 },
-      { name: 'Ukyo', center: [35.0105, 135.6978], zoom: 13 },
-      { name: 'Fushimi', center: [34.9362, 135.7614], zoom: 13 },
-      { name: 'Yamashina', center: [34.9721, 135.8144], zoom: 13 },
-      { name: 'Nishikyo', center: [34.9858, 135.6934], zoom: 13 },
+      { name: 'Kamigyo', name_jp: '上京区', center: [35.0297, 135.7563], zoom: 14 },
+      { name: 'Kita', name_jp: '北区', center: [35.0518, 135.7525], zoom: 13 },
+      { name: 'Sakyo', name_jp: '左京区', center: [35.0434, 135.7786], zoom: 13 },
+      { name: 'Nakagyo', name_jp: '中京区', center: [35.0101, 135.7515], zoom: 14 },
+      { name: 'Higashiyama', name_jp: '東山区', center: [34.9968, 135.7784], zoom: 14 },
+      { name: 'Shimogyo', name_jp: '下京区', center: [34.9877, 135.7595], zoom: 14 },
+      { name: 'Minami', name_jp: '南区', center: [34.9769, 135.7463], zoom: 13 },
+      { name: 'Ukyo', name_jp: '右京区', center: [35.0105, 135.6978], zoom: 13 },
+      { name: 'Fushimi', name_jp: '伏見区', center: [34.9362, 135.7614], zoom: 13 },
+      { name: 'Yamashina', name_jp: '山科区', center: [34.9721, 135.8144], zoom: 13 },
+      { name: 'Nishikyo', name_jp: '西京区', center: [34.9858, 135.6934], zoom: 13 },
     ],
   },
   {
@@ -5030,7 +5019,7 @@ Return ONLY valid JSON matching the schema.`;
                           >
                             <option value="">All wards</option>
                             {areaCityOptions.map((city) => (
-                              <option key={city.name} value={city.name}>{city.name}</option>
+                              <option key={city.name} value={city.name}>{city.name}{city.name_jp ? ` ${city.name_jp}` : ''}</option>
                             ))}
                           </select>
                         </div>
@@ -6119,7 +6108,7 @@ Return ONLY valid JSON matching the schema.`;
                           >
                             <option value="">All wards</option>
                             {areaCityOptions.map((city) => (
-                              <option key={city.name} value={city.name}>{city.name}</option>
+                              <option key={city.name} value={city.name}>{city.name}{city.name_jp ? ` ${city.name_jp}` : ''}</option>
                             ))}
                           </select>
                         </div>
@@ -7589,7 +7578,7 @@ Return ONLY valid JSON matching the schema.`;
                           className="w-full px-6 py-4 bg-stone-50 border border-stone-200 outline-none focus:border-black transition-all font-medium appearance-none"
                         >
                           {getAreaCityOptions(placeEditorAreaKey).map((city) => (
-                            <option key={city.name} value={city.name}>{city.name}</option>
+                            <option key={city.name} value={city.name}>{city.name}{city.name_jp ? ` ${city.name_jp}` : ''}</option>
                           ))}
                         </select>
                       </div>
