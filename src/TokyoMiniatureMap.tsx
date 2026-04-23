@@ -54,6 +54,7 @@ interface TokyoMiniatureMapProps {
   places: PlaceLike[];
   tempAiPin: TempAiPinLike | null;
   aiFavoritePins: AiFavoritePinLike[];
+  aiTrendPins?: AiFavoritePinLike[];
   newPlacePos: { lat: number; lng: number } | null;
   role: 'admin' | 'user' | null;
   activeTab: 'map' | 'list' | 'shorts' | 'ai' | 'profile';
@@ -130,7 +131,7 @@ function ensureMapTilerAssets() {
   return sdkLoader;
 }
 
-function createMarkerNode(kind: 'place' | 'ai' | 'aiSaved' | 'new', label?: string, category?: string) {
+function createMarkerNode(kind: 'place' | 'ai' | 'aiSaved' | 'aiTrend' | 'new', label?: string, category?: string) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'milz-maptiler-marker';
@@ -143,6 +144,10 @@ function createMarkerNode(kind: 'place' | 'ai' | 'aiSaved' | 'new', label?: stri
     inner.style.background = markerStyle.bg;
     inner.style.color = markerStyle.fg;
     inner.innerHTML = markerStyle.svg;
+  } else if (kind === 'aiTrend') {
+    inner.style.background = '#e11d48';
+    inner.style.color = '#ffffff';
+    inner.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.5 12 21 12 21Z"/></svg>';
   } else {
     inner.textContent = kind === 'ai' ? 'AI' : kind === 'aiSaved' ? '★' : kind === 'new' ? '+' : '';
   }
@@ -348,6 +353,7 @@ export default function TokyoMiniatureMap({
   places,
   tempAiPin,
   aiFavoritePins,
+  aiTrendPins = [],
   newPlacePos,
   role,
   activeTab,
@@ -365,6 +371,7 @@ export default function TokyoMiniatureMap({
   const mapInstanceRef = useRef<any>(null);
   const markerRefs = useRef<any[]>([]);
   const aiFavoriteMarkerRefs = useRef<any[]>([]);
+  const aiTrendMarkerRefs = useRef<any[]>([]);
   const tempMarkerRef = useRef<any | null>(null);
   const addMarkerRef = useRef<any | null>(null);
   const activePopupRef = useRef<any | null>(null);
@@ -467,6 +474,8 @@ export default function TokyoMiniatureMap({
       markerRefs.current = [];
       aiFavoriteMarkerRefs.current.forEach((marker) => marker.remove?.());
       aiFavoriteMarkerRefs.current = [];
+      aiTrendMarkerRefs.current.forEach((marker) => marker.remove?.());
+      aiTrendMarkerRefs.current = [];
       tempMarkerRef.current?.remove?.();
       addMarkerRef.current?.remove?.();
       mapInstanceRef.current?.remove?.();
@@ -584,6 +593,25 @@ export default function TokyoMiniatureMap({
       aiFavoriteMarkerRefs.current.push(marker);
     });
   }, [aiFavoritePins]);
+
+  useEffect(() => {
+    const sdk = window.maptilersdk;
+    const map = mapInstanceRef.current;
+    if (!sdk || !map) return;
+
+    aiTrendMarkerRefs.current.forEach((marker) => marker.remove?.());
+    aiTrendMarkerRefs.current = [];
+
+    aiTrendPins.forEach((place) => {
+      if (typeof place.lat !== 'number' || typeof place.lng !== 'number') return;
+      const el = createMarkerNode('aiTrend');
+      el.title = place.name;
+      const marker = new sdk.Marker({ element: el, anchor: 'bottom' })
+        .setLngLat([place.lng, place.lat])
+        .addTo(map);
+      aiTrendMarkerRefs.current.push(marker);
+    });
+  }, [aiTrendPins]);
 
   useEffect(() => {
     const sdk = window.maptilersdk;

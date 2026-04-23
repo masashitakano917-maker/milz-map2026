@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { getSupabase, testSupabaseConnection, resetSupabaseClient } from './supabase';
-import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
+import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowRight, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
 
 // DropZone component for drag & drop uploads
 const DropZone = ({ onFilesDrop, label, className, icon: Icon = Upload, isLoading = false, accept = "*/*" }: { 
@@ -77,6 +77,15 @@ import { Country, State, City } from 'country-state-city';
 import { MAP_THEMES, TOKYO_ILLUSTRATION_THEME, isIllustrationTheme, type MapThemeKey } from './illustrationMaps';
 import TokyoMiniatureMap, { type MapNavigator } from './TokyoMiniatureMap';
 import MilzLanding from './MilzLanding';
+import AITrendSpots from './AITrendSpots';
+
+const AI_TREND_AREA_MAP: Record<string, 'ny' | 'tokyo' | 'kyoto' | 'seoul' | 'hawaii'> = {
+  'new-york': 'ny',
+  'tokyo': 'tokyo',
+  'kyoto': 'kyoto',
+  'seoul': 'seoul',
+  'hawaii': 'hawaii',
+};
 
 // Utility for tailwind classes
 function cn(...inputs: ClassValue[]) {
@@ -538,6 +547,36 @@ type Locale = "jp" | "en";
 const AI_FAVORITES_STORAGE_PREFIX = "milz_ai_favorites_";
 const AUTH_METADATA_AI_FAVORITES_KEY = "milz_ai_favorites";
 const AI_FAVORITES_TABLE = "ai_favorites";
+const AI_TREND_FAVORITES_TABLE = "ai_trend_favorites";
+
+type AiTrendFavoriteRow = {
+  id: string;
+  trend_spot_id: string;
+  area_key: string;
+  city_name: string;
+  name: string;
+  category: string;
+  address: string;
+  website_url: string;
+  source: string;
+  lat: number | null;
+  lng: number | null;
+  trend_score: number | string;
+  created_at: string;
+};
+
+type PopularAiTrend = {
+  trend_spot_id: string;
+  name: string;
+  city_name: string;
+  category: string;
+  area_key: string;
+  save_count: number;
+  lat: number | null;
+  lng: number | null;
+  website_url: string;
+  source: string;
+};
 
 type FilterOptionKind = 'category' | 'badge';
 
@@ -568,6 +607,31 @@ interface AreaOption {
   cities: AreaCityOption[];
   aliases: string[];
 }
+
+interface StationOption {
+  id: string;
+  area_key: string;
+  name: string;
+  name_jp?: string;
+  lines: string[];
+  lat: number;
+  lng: number;
+}
+
+const STATION_RADIUS_OPTIONS: { value: number; label: string }[] = [
+  { value: 500, label: '500m' },
+  { value: 800, label: '800m' },
+  { value: 1500, label: '1.5km' },
+];
+
+const haversineMeters = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+};
 
 interface AiRecommendationMetric {
   id?: string;
@@ -1919,6 +1983,8 @@ export default function App() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [aiFavorites, setAiFavorites] = useState<AiFavoriteItem[]>([]);
+  const [aiTrendFavorites, setAiTrendFavorites] = useState<AiTrendFavoriteRow[]>([]);
+  const [popularAiTrends, setPopularAiTrends] = useState<PopularAiTrend[]>([]);
   const [locale, setLocale] = useState<Locale>(() => {
     if (typeof window === 'undefined') return 'jp';
     const stored = window.localStorage.getItem('milz_locale');
@@ -1971,7 +2037,9 @@ export default function App() {
   const [isUpdatingDetail, setIsUpdatingDetail] = useState(false);
   const [isMapBoundsFilterEnabled, setIsMapBoundsFilterEnabled] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [listFilter, setListFilter] = useState<'all' | 'favorites' | 'ai_favorites'>('all');
+  const [listFilter, setListFilter] = useState<'home' | 'all' | 'favorites' | 'ai_favorites' | 'ai_trends'>('home');
+  const [homeFavTab, setHomeFavTab] = useState<'favorites' | 'ai_favorites' | 'ai_trends'>('favorites');
+  const [homeCityFilter, setHomeCityFilter] = useState<'all' | 'new-york' | 'tokyo' | 'kyoto' | 'seoul' | 'hawaii'>('all');
   const [isFetching, setIsFetching] = useState(false);
   const [mapStyle, setMapStyle] = useState<MapThemeKey>(() => {
     if (typeof window === 'undefined') return 'original';
@@ -2044,6 +2112,36 @@ export default function App() {
   const [locationFilter, setLocationFilter] = useState(() => createLocationFilterFromArea('tokyo', 'Shibuya'));
   const areaOptions = AREA_OPTIONS;
   const areaCityOptions = useMemo(() => getAreaCityOptions(locationFilter.areaKey), [locationFilter.areaKey]);
+
+  const [stationsByArea, setStationsByArea] = useState<Record<string, StationOption[]>>({});
+  const [selectedStationId, setSelectedStationId] = useState<string>('');
+  const [stationRadius, setStationRadius] = useState<number>(800);
+
+  useEffect(() => {
+    const areaKey = locationFilter.areaKey;
+    if (!areaKey || stationsByArea[areaKey]) return;
+    (async () => {
+      const client = getSupabase();
+      if (!client) return;
+      const { data, error } = await client
+        .from('stations')
+        .select('id, area_key, name, name_jp, lines, lat, lng')
+        .eq('area_key', areaKey)
+        .order('display_order', { ascending: true });
+      if (error) return;
+      setStationsByArea((prev) => ({ ...prev, [areaKey]: (data as StationOption[]) || [] }));
+    })();
+  }, [locationFilter.areaKey, stationsByArea]);
+
+  useEffect(() => {
+    setSelectedStationId('');
+  }, [locationFilter.areaKey]);
+
+  const currentAreaStations = stationsByArea[locationFilter.areaKey] || [];
+  const selectedStation = useMemo(
+    () => currentAreaStations.find((s) => s.id === selectedStationId) || null,
+    [currentAreaStations, selectedStationId]
+  );
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResults, setAiResults] = useState<AIResults | null>(null);
@@ -2906,6 +3004,75 @@ export default function App() {
       client.removeChannel(channel);
     };
   }, [user?.id, fetchAiFavorites]);
+
+  const fetchAiTrendFavorites = useCallback(async () => {
+    const client = getSupabase();
+    if (!client || !user?.id) {
+      setAiTrendFavorites([]);
+      return;
+    }
+    const { data, error } = await client
+      .from(AI_TREND_FAVORITES_TABLE)
+      .select('id,trend_spot_id,area_key,city_name,name,category,address,website_url,source,lat,lng,trend_score,created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('Failed to load AI trend favorites:', error);
+      return;
+    }
+    setAiTrendFavorites((data ?? []) as AiTrendFavoriteRow[]);
+  }, [user?.id]);
+
+  const fetchPopularAiTrends = useCallback(async () => {
+    const client = getSupabase();
+    if (!client) return;
+    const { data, error } = await client
+      .from(AI_TREND_FAVORITES_TABLE)
+      .select('trend_spot_id,name,city_name,category,area_key,lat,lng,website_url,source');
+    if (error) {
+      console.error('Failed to load popular AI trends:', error);
+      return;
+    }
+    const counts = new Map<string, PopularAiTrend>();
+    for (const row of (data ?? []) as any[]) {
+      const existing = counts.get(row.trend_spot_id);
+      if (existing) {
+        existing.save_count += 1;
+      } else {
+        counts.set(row.trend_spot_id, {
+          trend_spot_id: row.trend_spot_id,
+          name: row.name,
+          city_name: row.city_name,
+          category: row.category,
+          area_key: row.area_key,
+          save_count: 1,
+          lat: row.lat,
+          lng: row.lng,
+          website_url: row.website_url,
+          source: row.source,
+        });
+      }
+    }
+    const sorted = Array.from(counts.values()).sort((a, b) => b.save_count - a.save_count).slice(0, 12);
+    setPopularAiTrends(sorted);
+  }, []);
+
+  useEffect(() => {
+    fetchAiTrendFavorites();
+    fetchPopularAiTrends();
+    const client = getSupabase();
+    if (!client || !user?.id) return;
+    const channel = client
+      .channel(`ai_trend_favorites_changes_${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: AI_TREND_FAVORITES_TABLE, filter: `user_id=eq.${user.id}` }, () => {
+        fetchAiTrendFavorites();
+        fetchPopularAiTrends();
+      })
+      .subscribe();
+    return () => {
+      client.removeChannel(channel);
+    };
+  }, [user?.id, fetchAiTrendFavorites, fetchPopularAiTrends]);
 
   const handleLogin = async () => {
     setAuthError('');
@@ -4339,15 +4506,17 @@ Return ONLY valid JSON matching the schema.`;
       const placeAreaKey = resolvePlaceAreaKey(p);
       const placeCity = resolvePlaceCityName(p, placeAreaKey);
       const matchesArea = !locationFilter.areaKey || placeAreaKey === locationFilter.areaKey;
-      const matchesCity = !locationFilter.cityName || !placeCity || placeCity === locationFilter.cityName || (p.address || '').toLowerCase().includes(locationFilter.cityName.toLowerCase());
+      const matchesCity = !!selectedStation || !locationFilter.cityName || !placeCity || placeCity === locationFilter.cityName || (p.address || '').toLowerCase().includes(locationFilter.cityName.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
       const matchesBadge = selectedBadge === 'all' || (p.badges || []).includes(selectedBadge);
       const isInBounds = (activeTab === 'list' && listFilter === 'all' && isMapBoundsFilterEnabled && mapBounds)
         ? mapBounds.contains([p.lat, p.lng])
         : true;
-      return matchesSearch && matchesArea && matchesCity && matchesCategory && matchesBadge && isInBounds;
+      const matchesStation = !selectedStation
+        || haversineMeters(selectedStation.lat, selectedStation.lng, p.lat, p.lng) <= stationRadius;
+      return matchesSearch && matchesArea && matchesCity && matchesCategory && matchesBadge && isInBounds && matchesStation;
     });
-  }, [places, searchQuery, selectedCategory, selectedBadge, activeTab, listFilter, isMapBoundsFilterEnabled, mapBounds, locationFilter.areaKey, locationFilter.cityName]);
+  }, [places, searchQuery, selectedCategory, selectedBadge, activeTab, listFilter, isMapBoundsFilterEnabled, mapBounds, locationFilter.areaKey, locationFilter.cityName, selectedStation, stationRadius]);
 
   const favoritePlaces = useMemo(() => {
     return places.filter(p => favorites.some(f => f.place_id === p.id));
@@ -4797,17 +4966,65 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">City / Ward</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">City / Ward {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">(driven by station)</span>}</p>
                           <select
-                            value={locationFilter.cityName}
-                            onChange={(e) => setLocationFilter((prev) => ({ ...prev, cityCode: e.target.value, cityName: e.target.value }))}
-                            className="w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium"
+                            value={selectedStation ? '' : locationFilter.cityName}
+                            onChange={(e) => {
+                              setSelectedStationId('');
+                              setLocationFilter((prev) => ({ ...prev, cityCode: e.target.value, cityName: e.target.value }));
+                            }}
+                            className={cn(
+                              "w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium",
+                              selectedStation && "opacity-60"
+                            )}
                           >
+                            <option value="">All wards</option>
                             {areaCityOptions.map((city) => (
                               <option key={city.name} value={city.name}>{city.name}</option>
                             ))}
                           </select>
                         </div>
+
+                        {currentAreaStations.length > 0 && (
+                          <div className="space-y-4">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Station</p>
+                            <select
+                              value={selectedStationId}
+                              onChange={(e) => {
+                                setSelectedStationId(e.target.value);
+                                if (e.target.value) {
+                                  setLocationFilter((prev) => ({ ...prev, cityCode: '', cityName: '' }));
+                                }
+                              }}
+                              className="w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium"
+                            >
+                              <option value="">All stations</option>
+                              {currentAreaStations.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            {selectedStation && (
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {STATION_RADIUS_OPTIONS.map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => setStationRadius(opt.value)}
+                                    className={cn(
+                                      "px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] rounded-full border transition-all",
+                                      stationRadius === opt.value
+                                        ? "bg-black text-white border-black"
+                                        : "text-stone-400 border-stone-100 hover:border-stone-200"
+                                    )}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         <div className="space-y-4">
                           <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Categories</p>
@@ -4897,6 +5114,9 @@ Return ONLY valid JSON matching the schema.`;
                   places={filteredPlaces}
                   tempAiPin={tempAiPin}
                   aiFavoritePins={aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name }))}
+                  aiTrendPins={aiTrendFavorites
+                    .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
+                    .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name }))}
                   newPlacePos={newPlacePos}
                   role={role}
                   activeTab={activeTab}
@@ -5009,8 +5229,33 @@ Return ONLY valid JSON matching the schema.`;
                     </Marker>
                   ))}
 
+                  {aiTrendFavorites.map((r) => (
+                    typeof r.lat === 'number' && typeof r.lng === 'number' ? (
+                      <Marker
+                        key={`trend-${r.id}`}
+                        position={[r.lat as number, r.lng as number]}
+                        icon={L.divIcon({
+                          className: 'custom-div-icon',
+                          html: `<div style="background-color: #e11d48; width: 32px; height: 32px; border-radius: 999px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 6px 16px rgba(225,29,72,0.35);"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.5 12 21 12 21Z"/></svg></div>`,
+                          iconSize: [32, 32],
+                          iconAnchor: [16, 32],
+                        })}
+                      >
+                        <Popup>
+                          <div className="p-2">
+                            <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">AI Trend</div>
+                            <div className="font-black text-black uppercase tracking-tight">{r.name}</div>
+                            {r.city_name && (
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-1">{r.city_name}</div>
+                            )}
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ) : null
+                  ))}
+
                   {tempAiPin && (
-                    <Marker 
+                    <Marker
                       position={[tempAiPin.lat, tempAiPin.lng]}
                       icon={L.divIcon({
                         className: 'custom-div-icon',
@@ -5054,46 +5299,58 @@ Return ONLY valid JSON matching the schema.`;
               exit={{ opacity: 0, y: 20 }}
               className="h-full overflow-y-auto p-4 pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-44 space-y-4 md:space-y-6 bg-stone-50"
             >
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search spots..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-lg text-sm font-medium focus:border-black outline-none transition-all shadow-sm"
-                />
+              {listFilter !== 'home' && (
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setListFilter('home')}
+                  className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:border-black hover:text-black transition-all"
+                >
+                  <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                  {locale === 'jp' ? 'SPOTSへ戻る' : 'Back to SPOTS'}
+                </button>
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    placeholder="Search spots..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-lg text-sm font-medium focus:border-black outline-none transition-all shadow-sm"
+                  />
+                </div>
               </div>
+              )}
 
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-white border border-stone-200 rounded-xl shadow-sm">
-                <button 
-                  onClick={() => setListFilter('all')}
-                  className={cn(
-                    "flex-1 py-2 text-[10px] font-black transition-all uppercase tracking-widest rounded-lg",
-                    listFilter === 'all' ? "bg-black text-white" : "text-stone-400"
-                  )}
-                >
-                  ALL SPOTS
-                </button>
-                <button 
-                  onClick={() => setListFilter('favorites')}
-                  className={cn(
-                    "flex-1 py-2 text-[10px] font-black transition-all uppercase tracking-widest rounded-lg",
-                    listFilter === 'favorites' ? "bg-black text-white" : "text-stone-400"
-                  )}
-                >
-                  FAVORITES
-                </button>
-                <button 
-                  onClick={() => setListFilter('ai_favorites')}
-                  className={cn(
-                    "flex-1 py-2 text-[10px] font-black transition-all uppercase tracking-widest rounded-lg",
-                    listFilter === 'ai_favorites' ? "bg-black text-white" : "text-stone-400"
-                  )}
-                >
-                  {t('aiFavoritesTab')}
-                </button>
+              {listFilter !== 'home' && (
+              <div className="grid grid-cols-5 gap-1 p-1 bg-white border border-stone-200 rounded-xl shadow-sm">
+                {([
+                  { key: 'home', label: 'HOME', Icon: ListIcon, color: 'bg-black' },
+                  { key: 'all', label: 'ALL', Icon: MapPinned, color: 'bg-black' },
+                  { key: 'favorites', label: 'FAVS', Icon: Heart, color: 'bg-black' },
+                  { key: 'ai_favorites', label: 'AI', Icon: Sparkles, color: 'bg-black' },
+                  { key: 'ai_trends', label: 'TREND', Icon: TrendingUp, color: 'bg-rose-500' },
+                ] as const).map(({ key, label, Icon, color }) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setListFilter(key);
+                      if (key === 'ai_trends' || key === 'home') {
+                        fetchAiTrendFavorites();
+                        fetchPopularAiTrends();
+                      }
+                    }}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all",
+                      listFilter === key ? `${color} text-white` : "text-stone-400 hover:text-stone-700"
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                  </button>
+                ))}
               </div>
+              )}
 
               {listFilter === 'all' && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 md:px-6 bg-white border border-stone-200 rounded-xl shadow-sm">
@@ -5116,8 +5373,472 @@ Return ONLY valid JSON matching the schema.`;
                 </div>
               )}
 
+              {listFilter === 'ai_trends' && popularAiTrends.length > 0 && (
+                <div className="bg-white border border-stone-100 rounded-[1.75rem] p-5 md:p-6 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-rose-500" />
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-black">
+                      {locale === 'jp' ? '人気のAIトレンド' : 'Popular AI Trends'}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {popularAiTrends.map((p, idx) => (
+                      <button
+                        key={p.trend_spot_id}
+                        type="button"
+                        onClick={() => {
+                          if (typeof p.lat === 'number' && typeof p.lng === 'number') {
+                            handleAiViewOnMap({ lat: p.lat, lng: p.lng, name: p.name } as any);
+                          }
+                        }}
+                        className="text-left flex items-center gap-3 p-3 rounded-xl border border-stone-100 hover:border-rose-300 hover:bg-rose-50/40 transition-all"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center text-[11px] font-black tabular-nums shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-black truncate">{p.name}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 truncate">
+                            {p.city_name} / {p.category || p.source}
+                          </p>
+                        </div>
+                        <div className="flex items-center text-rose-500 shrink-0">
+                          <Heart className="w-4 h-4 fill-current" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {listFilter === 'home' && (() => {
+                const favSources = {
+                  favorites: {
+                    count: favoritePlaces.length,
+                    label: locale === 'jp' ? 'お気に入り' : 'Favorites',
+                    target: 'favorites' as const,
+                    render: () => (
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
+                        {favoritePlaces.slice(0, 6).map((place) => (
+                          <div
+                            key={place.id}
+                            className="group rounded-2xl border border-stone-100 bg-white hover:border-black hover:shadow-md transition-all overflow-hidden flex flex-col"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => openPlaceDetail(place)}
+                              className="relative block aspect-[16/10] bg-stone-100 overflow-hidden"
+                            >
+                              {place.image_url ? (
+                                <img src={place.image_url} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" referrerPolicy="no-referrer" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><MapPin className="w-7 h-7 text-stone-300" /></div>
+                              )}
+                              <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center">
+                                <Heart className="w-3 h-3 text-rose-500 fill-current" />
+                              </div>
+                            </button>
+                            <div className="p-2.5 space-y-1 flex flex-col flex-1">
+                              <div className="text-[8px] font-black uppercase tracking-[0.2em] text-stone-400 truncate">{place.category}</div>
+                              <button
+                                type="button"
+                                onClick={() => openPlaceDetail(place)}
+                                className="text-left text-[12px] font-black text-black leading-snug line-clamp-2 hover:underline underline-offset-2"
+                              >
+                                {place.name}
+                              </button>
+                              <div className="text-[10px] text-stone-500 font-medium line-clamp-2 flex-1">{place.address || ''}</div>
+                              <button
+                                type="button"
+                                onClick={() => focusMapOnCoords({ lat: place.lat, lng: place.lng })}
+                                className="mt-0.5 inline-flex items-center justify-center gap-1 self-start rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-stone-600 hover:border-black hover:text-black hover:bg-stone-50 transition-all"
+                              >
+                                <MapIcon className="w-2.5 h-2.5" />
+                                MAP
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ),
+                  },
+                  ai_favorites: {
+                    count: aiFavoritePlaces.length,
+                    label: locale === 'jp' ? 'AIレコメンド' : 'AI Recommend',
+                    target: 'ai_favorites' as const,
+                    render: () => (
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
+                        {aiFavoritePlaces.slice(0, 6).map((item) => {
+                          const localized = getAiFavoriteDisplay(item, locale);
+                          return (
+                            <div
+                              key={item.key}
+                              className="group rounded-2xl border border-stone-100 bg-white hover:border-black hover:shadow-md transition-all overflow-hidden flex flex-col"
+                            >
+                              <div className="relative aspect-[16/10] bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+                                <Sparkles className="w-7 h-7 text-stone-400 group-hover:text-black transition-colors" />
+                                <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center">
+                                  <Heart className="w-3 h-3 text-rose-500 fill-current" />
+                                </div>
+                              </div>
+                              <div className="p-2.5 space-y-1 flex flex-col flex-1">
+                                <div className="text-[8px] font-black uppercase tracking-[0.2em] text-stone-400 truncate">{localized.category}</div>
+                                <div className="text-[12px] font-black text-black leading-snug line-clamp-2">{localized.name}</div>
+                                <div className="text-[10px] text-stone-500 font-medium line-clamp-2 flex-1">{localized.reason || item.city_name || ''}</div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAiViewOnMap({ name: localized.name, lat: item.lat, lng: item.lng, category: localized.category })}
+                                  className="mt-0.5 inline-flex items-center justify-center gap-1 self-start rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-stone-600 hover:border-black hover:text-black hover:bg-stone-50 transition-all"
+                                >
+                                  <MapIcon className="w-2.5 h-2.5" />
+                                  MAP
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ),
+                  },
+                  ai_trends: {
+                    count: aiTrendFavorites.length,
+                    label: locale === 'jp' ? 'AIトレンド' : 'AI Trend',
+                    target: 'ai_trends' as const,
+                    render: () => (
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
+                        {aiTrendFavorites.slice(0, 6).map((fav) => (
+                          <div
+                            key={fav.id}
+                            className="group rounded-2xl border border-rose-100 bg-white hover:border-rose-400 hover:shadow-md transition-all overflow-hidden flex flex-col"
+                          >
+                            <div className="relative aspect-[16/10] bg-gradient-to-br from-rose-50 to-rose-100/60 flex items-center justify-center">
+                              <TrendingUp className="w-7 h-7 text-rose-500 group-hover:scale-110 transition-transform" />
+                              <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center">
+                                <Heart className="w-3 h-3 text-rose-500 fill-current" />
+                              </div>
+                            </div>
+                            <div className="p-2.5 space-y-1 flex flex-col flex-1">
+                              <div className="text-[8px] font-black uppercase tracking-[0.2em] text-rose-500 truncate">{fav.category || fav.city_name}</div>
+                              <div className="text-[12px] font-black text-black leading-snug line-clamp-2">{fav.name}</div>
+                              <div className="text-[10px] text-stone-500 font-medium line-clamp-2 flex-1">{fav.address || fav.city_name || ''}</div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof fav.lat === 'number' && typeof fav.lng === 'number') {
+                                    handleAiViewOnMap({ name: fav.name, lat: fav.lat as number, lng: fav.lng as number, category: fav.category });
+                                  }
+                                }}
+                                className="mt-0.5 inline-flex items-center justify-center gap-1 self-start rounded-full border border-rose-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-rose-500 hover:border-rose-500 hover:bg-rose-50 transition-all"
+                              >
+                                <MapIcon className="w-2.5 h-2.5" />
+                                MAP
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ),
+                  },
+                };
+                const activeFav = favSources[homeFavTab];
+                const cityOptions: Array<{ key: typeof homeCityFilter; label: string }> = [
+                  { key: 'all', label: locale === 'jp' ? 'ALL' : 'ALL' },
+                  { key: 'new-york', label: 'NEW YORK' },
+                  { key: 'tokyo', label: 'TOKYO' },
+                  { key: 'kyoto', label: 'KYOTO' },
+                  { key: 'seoul', label: 'SEOUL' },
+                  { key: 'hawaii', label: 'HAWAII' },
+                ];
+                const listSource = homeCityFilter === 'all'
+                  ? filteredPlaces
+                  : filteredPlaces.filter((p) => p.area_key === homeCityFilter);
+                const marqueeItems = [
+                  'ISSUE N°001',
+                  'FINDING THE UNKNOWN',
+                  'NEW YORK / TOKYO / KYOTO / SEOUL / HAWAII',
+                  'A CURATED SELECTION',
+                  locale === 'jp' ? '知られていないものを、編む' : 'KNIT THE UNSEEN',
+                  'MILZ SELECTS',
+                ];
+                return (
+                  <div className="space-y-6 md:space-y-8">
+                    <div className="-mx-4 md:-mx-6 bg-black text-white overflow-hidden py-2.5 border-y border-black">
+                      <div className="marquee-track text-[11px] tracking-[0.35em] font-semibold">
+                        {Array.from({ length: 3 }).map((_, k) => (
+                          <div key={k} className="flex gap-10 pr-10 whitespace-nowrap">
+                            {marqueeItems.map((txt, i) => (
+                              <span key={i}>★ {txt}</span>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-4 pt-2">
+                      <div>
+                        <div className="text-[10px] font-black tracking-[0.35em] text-stone-400 uppercase mb-3">
+                          {locale === 'jp' ? 'キュレーション一覧' : 'The Curated Index'}
+                        </div>
+                        <h1 className="text-[56px] md:text-[80px] leading-none font-black tracking-tight text-black">
+                          SPOTS<span>.</span>
+                        </h1>
+                      </div>
+                      <div className="hidden md:block text-right text-[10px] tracking-[0.3em] text-stone-400 uppercase font-black">
+                        <div>MILZ / ISSUE 001</div>
+                        <div className="mt-1 tabular-nums">{filteredPlaces.length} ENTRIES</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                      <section className="bg-white rounded-[1.75rem] border border-stone-100 shadow-sm p-5 md:p-7 space-y-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mb-1.5">
+                              {locale === 'jp' ? 'リスト' : 'The List'}
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-black">List<span>.</span></h2>
+                          </div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 tabular-nums">
+                            {listSource.length} {locale === 'jp' ? '件' : 'SPOTS'}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {cityOptions.map(({ key, label }) => {
+                            const active = homeCityFilter === key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => setHomeCityFilter(key)}
+                                className={cn(
+                                  "rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-all",
+                                  active
+                                    ? "border-black bg-black text-white"
+                                    : "border-stone-200 bg-stone-50 text-stone-500 hover:border-black hover:text-black"
+                                )}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {listSource.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-4 py-8 text-center text-xs font-medium text-stone-400">
+                            {locale === 'jp' ? 'この都市のスポットはまだありません' : 'No spots in this city yet'}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-3 gap-3 md:gap-4">
+                              {listSource.slice(0, 6).map((place) => (
+                                <div
+                                  key={place.id}
+                                  className="group rounded-2xl border border-stone-100 bg-white hover:border-black hover:shadow-md transition-all overflow-hidden flex flex-col"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => openPlaceDetail(place)}
+                                    className="block aspect-[16/10] bg-stone-100 overflow-hidden"
+                                  >
+                                    {place.image_url ? (
+                                      <img src={place.image_url} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" referrerPolicy="no-referrer" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center"><MapPin className="w-7 h-7 text-stone-300" /></div>
+                                    )}
+                                  </button>
+                                  <div className="p-3 space-y-1.5 flex flex-col flex-1">
+                                    <div className="text-[9px] font-black uppercase tracking-[0.22em] text-stone-400 truncate">{place.category}</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => openPlaceDetail(place)}
+                                      className="text-left text-sm font-black text-black leading-snug line-clamp-2 hover:underline underline-offset-2"
+                                    >
+                                      {place.name}
+                                    </button>
+                                    <div className="text-[11px] text-stone-500 font-medium line-clamp-2 flex-1">{place.address || place.city || ''}</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => focusMapOnCoords({ lat: place.lat, lng: place.lng })}
+                                      className="mt-1 inline-flex items-center justify-center gap-1.5 self-start rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black hover:bg-stone-50 transition-all"
+                                    >
+                                      <MapIcon className="w-3 h-3" />
+                                      MAP
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {listSource.length > 6 && (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setListFilter('all')}
+                                  className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.3em] text-black hover:border-black hover:bg-stone-50 transition-all"
+                                >
+                                  {locale === 'jp' ? '一覧を見る' : 'View more'}
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </section>
+
+                      <section className="bg-white rounded-[1.75rem] border border-stone-100 shadow-sm p-5 md:p-7 space-y-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 mb-1.5">
+                              {locale === 'jp' ? 'お気に入り' : 'Your Favorites'}
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-black">Your Favs<span>.</span></h2>
+                          </div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400 tabular-nums">
+                            {activeFav.count} {locale === 'jp' ? '件' : 'SAVED'}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {(['favorites', 'ai_favorites', 'ai_trends'] as const).map((key) => {
+                            const src = favSources[key];
+                            const active = homeFavTab === key;
+                            const isTrend = key === 'ai_trends';
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => setHomeFavTab(key)}
+                                className={cn(
+                                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] transition-all",
+                                  active
+                                    ? (isTrend ? "border-rose-500 bg-rose-500 text-white" : "border-black bg-black text-white")
+                                    : "border-stone-200 bg-stone-50 text-stone-500 hover:border-black hover:text-black"
+                                )}
+                              >
+                                {src.label}
+                                <span className={cn(
+                                  "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] tabular-nums",
+                                  active ? "bg-white/25 text-white" : "bg-white text-stone-500"
+                                )}>{src.count}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {activeFav.count === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-4 py-8 text-center text-xs font-medium text-stone-400">
+                            {locale === 'jp' ? 'まだ保存されていません' : 'Nothing saved yet'}
+                          </div>
+                        ) : (
+                          <>
+                            {activeFav.render()}
+                            {activeFav.count > 6 && (
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setListFilter(activeFav.target)}
+                                  className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.3em] text-black hover:border-black hover:bg-stone-50 transition-all"
+                                >
+                                  {locale === 'jp' ? '一覧を見る' : 'View more'}
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </section>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {listFilter !== 'home' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {listFilter === 'ai_favorites' ? (
+                {listFilter === 'ai_trends' ? (
+                  aiTrendFavorites.length > 0 ? aiTrendFavorites.map((fav) => (
+                    <motion.div
+                      layout
+                      key={fav.id}
+                      className="bg-white p-5 md:p-6 border border-stone-100 rounded-[1.75rem] group shadow-sm hover:shadow-xl transition-all duration-500"
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1.5 min-w-0">
+                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em]">
+                              AI TREND / {fav.city_name}
+                            </p>
+                            <h3 className="text-lg font-black text-black leading-tight">{fav.name}</h3>
+                            {fav.category && (
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{fav.category}</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const client = getSupabase();
+                              if (!client || !user?.id) return;
+                              await client.from(AI_TREND_FAVORITES_TABLE).delete().eq('id', fav.id);
+                              setAiTrendFavorites((prev) => prev.filter((r) => r.id !== fav.id));
+                            }}
+                            className="p-2.5 rounded-full transition-all active:scale-90 border text-rose-500 border-rose-100 bg-rose-50/50"
+                            title={locale === 'jp' ? '削除' : 'Remove'}
+                          >
+                            <Heart className="w-4 h-4 fill-current" />
+                          </button>
+                        </div>
+
+                        {fav.address && (
+                          <p className="text-xs text-stone-500 font-medium line-clamp-2">{fav.address}</p>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                            {locale === 'jp' ? 'スコア' : 'Score'}
+                          </span>
+                          <span className="text-xs font-black text-black tabular-nums">
+                            {Number(fav.trend_score).toFixed(1)}
+                          </span>
+                          <span className="ml-auto text-[10px] font-black text-stone-300 uppercase tracking-widest">
+                            {new Date(fav.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                          {fav.website_url && (
+                            <a
+                              href={fav.website_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:text-black py-2 rounded-full border border-stone-200 hover:border-black transition-all"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Link
+                            </a>
+                          )}
+                          {typeof fav.lat === 'number' && typeof fav.lng === 'number' && (
+                            <button
+                              type="button"
+                              onClick={() => handleAiViewOnMap({ lat: fav.lat as number, lng: fav.lng as number, name: fav.name } as any)}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] py-2 rounded-full bg-black text-white hover:bg-stone-800 transition-all"
+                            >
+                              <MapPin className="w-3 h-3" />
+                              {t('viewOnMap')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )) : (
+                    <div className="col-span-full bg-white border border-stone-100 rounded-[2rem] shadow-sm px-8 py-14 text-center space-y-3">
+                      <Heart className="w-8 h-8 mx-auto text-stone-200" />
+                      <p className="text-sm font-black text-stone-500 uppercase tracking-[0.2em]">
+                        {locale === 'jp' ? 'AIトレンドのお気に入りはまだありません。' : 'No AI trend favorites yet.'}
+                      </p>
+                      <p className="text-sm text-stone-400">
+                        {locale === 'jp' ? 'AIタブのAIトレンドからハートで保存できます。' : 'Save from the AI Trends section in the AI tab.'}
+                      </p>
+                    </div>
+                  )
+                ) : listFilter === 'ai_favorites' ? (
                   aiFavoritePlaces.length > 0 ? aiFavoritePlaces.map((item) => (
                     <motion.div
                       layout
@@ -5257,6 +5978,7 @@ Return ONLY valid JSON matching the schema.`;
                   })
                 )}
               </div>
+              )}
             </motion.div>
           )}
                                       {activeTab === 'ai' && (
@@ -5333,22 +6055,75 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">City / Ward</label>
+                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">City / Ward {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">(driven by station)</span>}</label>
                           <select
-                            value={locationFilter.cityName}
-                            onChange={(e) => setLocationFilter((prev) => ({ ...prev, cityCode: e.target.value, cityName: e.target.value }))}
-                            className="w-full px-8 py-5 bg-stone-50 border border-stone-100 rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm"
+                            value={selectedStation ? '' : locationFilter.cityName}
+                            onChange={(e) => {
+                              setSelectedStationId('');
+                              setLocationFilter((prev) => ({ ...prev, cityCode: e.target.value, cityName: e.target.value }));
+                            }}
+                            className={cn(
+                              "w-full px-8 py-5 bg-stone-50 border border-stone-100 rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm",
+                              selectedStation && "opacity-60"
+                            )}
                           >
+                            <option value="">All wards</option>
                             {areaCityOptions.map((city) => (
                               <option key={city.name} value={city.name}>{city.name}</option>
                             ))}
                           </select>
                         </div>
                       </div>
+
+                      {currentAreaStations.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Station</label>
+                            <select
+                              value={selectedStationId}
+                              onChange={(e) => {
+                                setSelectedStationId(e.target.value);
+                                if (e.target.value) {
+                                  setLocationFilter((prev) => ({ ...prev, cityCode: '', cityName: '' }));
+                                }
+                              }}
+                              className="w-full px-8 py-5 bg-stone-50 border border-stone-100 rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm"
+                            >
+                              <option value="">All stations</option>
+                              {currentAreaStations.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Walk radius</label>
+                            <div className="flex flex-wrap gap-2 pt-2">
+                              {STATION_RADIUS_OPTIONS.map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => setStationRadius(opt.value)}
+                                  disabled={!selectedStation}
+                                  className={cn(
+                                    "px-5 py-3 text-[11px] font-black uppercase tracking-widest rounded-full border transition-all",
+                                    stationRadius === opt.value && selectedStation
+                                      ? "bg-black text-white border-black"
+                                      : "bg-stone-50 text-stone-400 border-stone-100 hover:border-stone-300",
+                                    !selectedStation && "opacity-50 cursor-not-allowed"
+                                  )}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-6">
-                      <button 
+                      <button
                         onClick={handleAiRecommend}
                         disabled={aiLoading}
                         className="w-full p-6 md:p-10 bg-[#1A1A1A] text-white font-black rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center gap-3 md:gap-4 shadow-2xl active:scale-95 transition-all disabled:opacity-50 tracking-[0.25em] md:tracking-[0.4em] text-[11px] md:text-xs hover:bg-black group"
@@ -5357,6 +6132,12 @@ Return ONLY valid JSON matching the schema.`;
                         Milz AI
                       </button>
                     </div>
+
+                    <AITrendSpots
+                      areaKey={AI_TREND_AREA_MAP[locationFilter.areaKey] ?? 'tokyo'}
+                      locale={locale}
+                      userId={user?.id ?? null}
+                    />
 
                     {/* Results Area */}
                     {aiResults && (
@@ -6029,7 +6810,7 @@ Return ONLY valid JSON matching the schema.`;
                   <aside className="space-y-4">
                     <div className="bg-white border border-stone-300/80 rounded-[2rem] p-5 md:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.05)]">
                       <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-400 mb-4">Overview</div>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4 text-center">
                           <div className="text-2xl font-black tracking-tight text-black">{favorites.length}</div>
                           <div className="mt-1 text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">Saved</div>
@@ -6037,6 +6818,10 @@ Return ONLY valid JSON matching the schema.`;
                         <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4 text-center">
                           <div className="text-2xl font-black tracking-tight text-black">{aiFavorites.length}</div>
                           <div className="mt-1 text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">AI</div>
+                        </div>
+                        <div className="rounded-[1.4rem] border border-rose-200 bg-rose-50 p-4 text-center">
+                          <div className="text-2xl font-black tracking-tight text-rose-600">{aiTrendFavorites.length}</div>
+                          <div className="mt-1 text-[9px] font-black uppercase tracking-[0.2em] text-rose-400">Trends</div>
                         </div>
                         <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4 text-center">
                           <div className="text-2xl font-black tracking-tight text-black">{places.length}</div>
@@ -6207,6 +6992,79 @@ Return ONLY valid JSON matching the schema.`;
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="bg-white border border-stone-300/80 rounded-[2rem] p-5 md:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.05)] space-y-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-rose-500">AI Trends</div>
+                        <h3 className="mt-2 text-2xl font-black tracking-tight text-black">
+                          {locale === 'jp' ? 'AIトレンドお気に入り' : 'AI trend favorites'}
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setListFilter('ai_trends');
+                          setActiveTab('list');
+                          fetchAiTrendFavorites();
+                          fetchPopularAiTrends();
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-rose-300 text-[10px] font-black uppercase tracking-[0.22em] text-rose-600 hover:border-rose-500 hover:bg-rose-50 transition-all"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                        {locale === 'jp' ? '一覧を見る' : 'View all'}
+                      </button>
+                    </div>
+
+                    {aiTrendFavorites.length === 0 ? (
+                      <div className="rounded-[1.6rem] border border-dashed border-rose-200 bg-rose-50/40 p-6 text-sm text-stone-500">
+                        {locale === 'jp'
+                          ? 'AIタブのAIトレンドからハートで保存すると、ここに集まります。'
+                          : 'Saved AI trend spots will appear here.'}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {aiTrendFavorites.slice(0, 6).map((fav) => (
+                          <div key={fav.id} className="rounded-[1.4rem] border border-rose-100 bg-rose-50/40 p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-500">
+                                  {fav.city_name}{fav.category ? ` / ${fav.category}` : ''}
+                                </div>
+                                <div className="mt-1 text-lg font-black tracking-tight text-black truncate">{fav.name}</div>
+                                {fav.address && (
+                                  <div className="mt-1 text-xs text-stone-500 font-medium line-clamp-1">{fav.address}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    const client = getSupabase();
+                                    if (!client || !user?.id) return;
+                                    await client.from(AI_TREND_FAVORITES_TABLE).delete().eq('id', fav.id);
+                                    setAiTrendFavorites((prev) => prev.filter((r) => r.id !== fav.id));
+                                    fetchPopularAiTrends();
+                                  }}
+                                  className="inline-flex items-center justify-center w-11 h-11 rounded-full border border-rose-200 bg-rose-50 text-rose-500 hover:border-rose-300 hover:bg-rose-100 transition-all"
+                                  title={locale === 'jp' ? 'お気に入りから削除' : 'Remove'}
+                                >
+                                  <Heart className="w-4 h-4 fill-current" />
+                                </button>
+                                {typeof fav.lat === 'number' && typeof fav.lng === 'number' && (
+                                  <button
+                                    onClick={() => handleAiViewOnMap({ name: fav.name, lat: fav.lat as number, lng: fav.lng as number, category: fav.category })}
+                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-stone-300 text-[10px] font-black uppercase tracking-[0.2em] text-stone-600 hover:border-black hover:text-black transition-all"
+                                  >
+                                    <MapPinned className="w-4 h-4" />
+                                    MAP
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </section>
