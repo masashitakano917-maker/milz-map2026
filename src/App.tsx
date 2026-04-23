@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { getSupabase, testSupabaseConnection, resetSupabaseClient } from './supabase';
+import { getSupabase, testSupabaseConnection, resetSupabaseClient, trackEvent } from './supabase';
 import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowRight, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
 
 // DropZone component for drag & drop uploads
@@ -263,9 +263,18 @@ function getYouTubeEmbedUrl(value?: string | null): string | null {
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
 }
 
-function VideoEmbed({ url, title }: { url: string; title: string }) {
+function VideoEmbed({ url, title, areaKey, placeId, placeName }: { url: string; title: string; areaKey?: string | null; placeId?: string | null; placeName?: string | null }) {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(url);
   const isDirectVideo = isLikelyVideoUrl(url) && !youtubeEmbedUrl;
+  const handleTrackPlay = () => {
+    trackEvent({
+      event_type: 'video_play',
+      video_url: url,
+      area_key: areaKey ?? null,
+      place_id: placeId ?? null,
+      place_name: placeName ?? null,
+    });
+  };
 
   if (isDirectVideo) {
     return (
@@ -276,6 +285,7 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
         controls
         playsInline
         preload="metadata"
+        onPlay={handleTrackPlay}
       />
     );
   }
@@ -289,6 +299,7 @@ function VideoEmbed({ url, title }: { url: string; title: string }) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={handleTrackPlay}
       />
     );
   }
@@ -312,6 +323,206 @@ function inferMediaTypeFromUrl(url?: string | null): 'image' | 'video' {
     return 'video';
   }
   return 'image';
+}
+
+type AdminStatsWindow = 'daily' | 'weekly' | 'monthly';
+
+interface AdminStats {
+  user_count: number;
+  new_users: number;
+  area_views: { area_key: string; views: number }[];
+  top_area: string | null;
+  video_plays: number;
+  top_favorites_per_area: Record<string, { place_id: string; name: string; count: number }[]>;
+  window_hours: number;
+}
+
+const AREA_LABEL: Record<string, string> = {
+  tokyo: 'Tokyo',
+  'new-york': 'New York',
+  kyoto: 'Kyoto',
+  seoul: 'Seoul',
+  hawaii: 'Hawaii',
+};
+
+function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
+  const [windowKey, setWindowKey] = useState<AdminStatsWindow>('daily');
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const hours = windowKey === 'daily' ? 24 : windowKey === 'weekly' ? 24 * 7 : 24 * 30;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      const client = getSupabase();
+      if (!client) {
+        if (!cancelled) {
+          setError('Supabase not configured');
+          setLoading(false);
+        }
+        return;
+      }
+      const { data, error } = await client.rpc('milz_admin_stats', { window_hours: hours });
+      if (cancelled) return;
+      if (error) {
+        setError(error.message);
+        setStats(null);
+      } else {
+        setStats(data as AdminStats);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [windowKey]);
+
+  const windowTabs: { key: AdminStatsWindow; label: string }[] = [
+    { key: 'daily', label: locale === 'jp' ? 'デイリー' : 'Daily' },
+    { key: 'weekly', label: locale === 'jp' ? 'ウィークリー' : 'Weekly' },
+    { key: 'monthly', label: locale === 'jp' ? 'マンスリー' : 'Monthly' },
+  ];
+
+  const totalViews = stats?.area_views.reduce((s, a) => s + a.views, 0) ?? 0;
+  const topAreaLabel = stats?.top_area ? (AREA_LABEL[stats.top_area] || stats.top_area) : '—';
+
+  return (
+    <section className="bg-white border border-stone-300/80 rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.06)] p-5 md:p-8 xl:p-10 space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-stone-400">ADMIN · ANALYTICS</div>
+          <h3 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-black">
+            {locale === 'jp' ? 'MILZ 利用状況ダッシュボード' : 'MILZ usage dashboard'}
+          </h3>
+          <p className="mt-1 text-sm text-stone-500">
+            {locale === 'jp' ? 'ユーザー数・人気エリア・お気に入り・動画再生数を一元表示。' : 'Users, popular areas, favorites and video plays at a glance.'}
+          </p>
+        </div>
+        <div className="flex items-center rounded-full border border-stone-200 bg-stone-50 p-1">
+          {windowTabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setWindowKey(t.key)}
+              className={cn(
+                'px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.22em] transition-all',
+                windowKey === t.key ? 'bg-black text-white' : 'text-stone-500 hover:text-black'
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-[1.2rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {error}
+        </div>
+      )}
+
+      {loading && !stats && (
+        <div className="rounded-[1.2rem] border border-stone-200 bg-stone-50 p-8 text-center text-sm text-stone-500">
+          <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
+          {locale === 'jp' ? '読み込み中…' : 'Loading…'}
+        </div>
+      )}
+
+      {stats && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                {locale === 'jp' ? '総ユーザー数' : 'Total users'}
+              </div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-black">{stats.user_count.toLocaleString()}</div>
+              <div className="mt-1 text-[10px] font-medium text-stone-500">
+                +{stats.new_users} {locale === 'jp' ? '新規' : 'new'}
+              </div>
+            </div>
+            <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                {locale === 'jp' ? '最も見られたエリア' : 'Top area'}
+              </div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-black break-words">{topAreaLabel}</div>
+              <div className="mt-1 text-[10px] font-medium text-stone-500">
+                {totalViews.toLocaleString()} {locale === 'jp' ? 'ビュー合計' : 'total views'}
+              </div>
+            </div>
+            <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                {locale === 'jp' ? '動画再生回数' : 'Video plays'}
+              </div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-black">{stats.video_plays.toLocaleString()}</div>
+            </div>
+            <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400">
+                {locale === 'jp' ? 'エリアビュー合計' : 'Area views'}
+              </div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-black">{totalViews.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-400 mb-3">
+              {locale === 'jp' ? 'エリア別ビュー数' : 'Views by area'}
+            </div>
+            {stats.area_views.length === 0 ? (
+              <div className="rounded-[1.2rem] border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500">
+                {locale === 'jp' ? 'この期間のビューはまだありません。' : 'No views in this window yet.'}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {stats.area_views.map((a) => {
+                  const pct = totalViews ? Math.round((a.views / totalViews) * 100) : 0;
+                  return (
+                    <div key={a.area_key} className="flex items-center gap-3">
+                      <div className="w-24 text-[11px] font-bold text-stone-700">{AREA_LABEL[a.area_key] || a.area_key}</div>
+                      <div className="flex-1 h-3 rounded-full bg-stone-100 overflow-hidden">
+                        <div className="h-full bg-black" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="w-20 text-right text-[11px] font-bold text-stone-700">{a.views.toLocaleString()}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-400 mb-3">
+              {locale === 'jp' ? 'お気に入りTOP10（エリア別）' : 'Top 10 favorites (by area)'}
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Object.keys(stats.top_favorites_per_area).length === 0 && (
+                <div className="rounded-[1.2rem] border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500 md:col-span-2 xl:col-span-3">
+                  {locale === 'jp' ? 'この期間のお気に入り登録はまだありません。' : 'No favorites recorded in this window yet.'}
+                </div>
+              )}
+              {Object.entries(stats.top_favorites_per_area).map(([areaKey, items]) => (
+                <div key={areaKey} className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-black mb-3">
+                    {AREA_LABEL[areaKey] || areaKey}
+                  </div>
+                  <ol className="space-y-1.5">
+                    {items.map((it, i) => (
+                      <li key={it.place_id} className="flex items-baseline gap-2 text-sm">
+                        <span className="w-5 text-[10px] font-black text-stone-400 tabular-nums">{i + 1}.</span>
+                        <span className="flex-1 text-stone-800 truncate">{it.name}</span>
+                        <span className="text-[11px] font-bold text-stone-500 tabular-nums">{it.count}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  );
 }
 
 function DetailMiniMap({
@@ -2162,6 +2373,11 @@ export default function App() {
   });
   const areaOptions = AREA_OPTIONS;
   const areaCityOptions = useMemo(() => getAreaCityOptions(locationFilter.areaKey), [locationFilter.areaKey]);
+
+  useEffect(() => {
+    if (!locationFilter.areaKey) return;
+    trackEvent({ event_type: 'area_view', area_key: locationFilter.areaKey });
+  }, [locationFilter.areaKey]);
 
   const [stationsByArea, setStationsByArea] = useState<Record<string, StationOption[]>>({});
   const [selectedStationId, setSelectedStationId] = useState<string>('');
@@ -6920,6 +7136,8 @@ Return ONLY valid JSON matching the schema.`;
                   </aside>
                 </div>
 
+                {role === 'admin' && <AdminStatsPanel locale={locale} />}
+
                 <div className="grid gap-6 xl:grid-cols-2">
                   <section className="bg-white border border-stone-300/80 rounded-[2rem] p-5 md:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.05)] space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -8071,7 +8289,7 @@ Return ONLY valid JSON matching the schema.`;
                               const youtubeEmbedUrl = getYouTubeEmbedUrl(video);
                               return (
                                 <div key={i} className="aspect-[9/16] bg-black relative group overflow-hidden rounded-[28px]">
-                                  <VideoEmbed url={video} title={`${selectedPlaceForDetail.name} video ${i + 1}`} />
+                                  <VideoEmbed url={video} title={`${selectedPlaceForDetail.name} video ${i + 1}`} areaKey={selectedPlaceForDetail.area_key} placeId={selectedPlaceForDetail.id} placeName={selectedPlaceForDetail.name} />
                                   {isEditingDetail && (
                                     <button 
                                       onClick={() => {
@@ -8241,7 +8459,7 @@ Return ONLY valid JSON matching the schema.`;
                                   {item.media_url ? (
                                     mediaType === 'video' ? (
                                       <div className="aspect-[4/5] rounded-[28px] overflow-hidden bg-black">
-                                        <VideoEmbed url={item.media_url} title={item.title || `from-spot-${index + 1}`} />
+                                        <VideoEmbed url={item.media_url} title={item.title || `from-spot-${index + 1}`} areaKey={selectedPlaceForDetail?.area_key} placeId={selectedPlaceForDetail?.id} placeName={selectedPlaceForDetail?.name} />
                                       </div>
                                     ) : (
                                       <div className="aspect-[4/5] rounded-[28px] overflow-hidden bg-stone-100">

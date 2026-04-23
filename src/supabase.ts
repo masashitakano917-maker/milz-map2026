@@ -170,6 +170,70 @@ export const testSupabaseConnection = async () => {
   }
 };
 
+export type MilzEventType = 'area_view' | 'video_play' | 'spot_view';
+
+export interface MilzEventPayload {
+  event_type: MilzEventType;
+  area_key?: string | null;
+  place_id?: string | null;
+  place_name?: string | null;
+  video_url?: string | null;
+}
+
+let milzSessionId: string | null = null;
+const getMilzSessionId = (): string => {
+  if (milzSessionId) return milzSessionId;
+  try {
+    const existing = window.sessionStorage.getItem('milz_session_id');
+    if (existing) {
+      milzSessionId = existing;
+      return existing;
+    }
+    const id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    window.sessionStorage.setItem('milz_session_id', id);
+    milzSessionId = id;
+    return id;
+  } catch {
+    const id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    milzSessionId = id;
+    return id;
+  }
+};
+
+const recentEventKeys = new Map<string, number>();
+const DEDUPE_WINDOW_MS = 60_000;
+
+export const trackEvent = async (payload: MilzEventPayload): Promise<void> => {
+  try {
+    const dedupeKey = `${payload.event_type}:${payload.area_key || ''}:${payload.place_id || ''}:${payload.video_url || ''}`;
+    const now = Date.now();
+    const last = recentEventKeys.get(dedupeKey);
+    if (last && now - last < DEDUPE_WINDOW_MS) return;
+    recentEventKeys.set(dedupeKey, now);
+    if (recentEventKeys.size > 200) {
+      for (const [k, t] of recentEventKeys) {
+        if (now - t > DEDUPE_WINDOW_MS * 4) recentEventKeys.delete(k);
+      }
+    }
+
+    const client = getSupabase();
+    if (!client) return;
+    const session = getMilzSessionId();
+    const { data: { user } } = await client.auth.getUser().catch(() => ({ data: { user: null } } as any));
+    await client.from('milz_events').insert({
+      event_type: payload.event_type,
+      user_id: user?.id ?? null,
+      area_key: payload.area_key ?? null,
+      place_id: payload.place_id ?? null,
+      place_name: payload.place_name ?? null,
+      video_url: payload.video_url ?? null,
+      session_id: session,
+    });
+  } catch (err) {
+    console.warn('trackEvent failed', err);
+  }
+};
+
 // Helper to add logs to the global debug log if possible
 const addLog = (msg: string) => {
   console.log(`[Supabase Diagnostic] ${msg}`);
