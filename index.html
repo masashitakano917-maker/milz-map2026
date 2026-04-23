@@ -1,13 +1,79 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MILZ</title>
+    <meta name="theme-color" content="#000000" />
+
+    <title>MILZ — Tokyo / NY / Kyoto / Seoul / Hawaii curated city map</title>
+    <meta name="description" content="MILZ is a curated map of trusted cafes, restaurants, shops and hidden spots across Tokyo, New York, Kyoto, Seoul and Hawaii. Search by ward or station, save favorites, discover AI-picked local trends." />
+    <meta name="keywords" content="MILZ, Tokyo map, Shibuya cafe, Kyoto guide, New York spots, Seoul guide, Hawaii travel, curated map, city guide, AI city guide" />
+    <meta name="author" content="MILZ" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <link rel="canonical" href="https://milz-map2026.pages.dev/" />
+    <link rel="alternate" hreflang="en" href="https://milz-map2026.pages.dev/?lang=en" />
+    <link rel="alternate" hreflang="ja" href="https://milz-map2026.pages.dev/?lang=ja" />
+    <link rel="alternate" hreflang="x-default" href="https://milz-map2026.pages.dev/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MILZ" />
+    <meta property="og:title" content="MILZ — curated city map" />
+    <meta property="og:description" content="Curated cafes, restaurants and hidden spots across Tokyo, New York, Kyoto, Seoul and Hawaii. Filter by ward or train station, save favorites, see AI-picked trends." />
+    <meta property="og:url" content="https://milz-map2026.pages.dev/" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:image" content="https://images.pexels.com/photos/3879071/pexels-photo-3879071.jpeg?auto=compress&cs=tinysrgb&w=1200" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MILZ — curated city map" />
+    <meta name="twitter:description" content="Trusted cafes, restaurants and hidden spots across Tokyo, NY, Kyoto, Seoul, Hawaii." />
+    <meta name="twitter:image" content="https://images.pexels.com/photos/3879071/pexels-photo-3879071.jpeg?auto=compress&cs=tinysrgb&w=1200" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "MILZ",
+        "url": "https://milz-map2026.pages.dev/",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Web",
+        "inLanguage": ["ja", "en"],
+        "description": "Curated map of trusted cafes, restaurants and hidden spots across Tokyo, New York, Kyoto, Seoul and Hawaii with ward and station filters, favorites and AI-picked trends.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "areaServed": [
+          { "@type": "City", "name": "Tokyo" },
+          { "@type": "City", "name": "New York" },
+          { "@type": "City", "name": "Kyoto" },
+          { "@type": "City", "name": "Seoul" },
+          { "@type": "Place", "name": "Hawaii" }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "MILZ",
+        "url": "https://milz-map2026.pages.dev/",
+        "logo": "https://milz-map2026.pages.dev/favicon.ico"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="font-family:system-ui;padding:2rem;max-width:640px;margin:0 auto;">
+        MILZ is a curated city map for Tokyo, New York, Kyoto, Seoul and Hawaii.
+        Please enable JavaScript to explore cafes, restaurants and hidden spots
+        filtered by ward or train station, save favorites, and see AI-picked trends.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
