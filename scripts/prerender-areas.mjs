@@ -140,8 +140,8 @@ const buildAreaHtml = (area) => {
     <meta property="og:image" content="${ogImage}" />
     <meta property="og:image:secure_url" content="${ogImage}" />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="3420" />
-    <meta property="og:image:height" content="2214" />
+    <meta property="og:image:width" content="2077" />
+    <meta property="og:image:height" content="1382" />
     <meta property="og:image:alt" content="${escapeHtml(area.title)}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(area.title)}" />
