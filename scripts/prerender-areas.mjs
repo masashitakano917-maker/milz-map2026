@@ -97,8 +97,7 @@ const escapeHtml = (s) =>
 
 const buildAreaHtml = (area) => {
   const url = `${SITE}/${area.slug}/`;
-  const ogImage =
-    'https://images.pexels.com/photos/3879071/pexels-photo-3879071.jpeg?auto=compress&cs=tinysrgb&w=1200';
+  const ogImage = `${SITE}/og-image.png`;
 
   const jsonLdTravel = {
     '@context': 'https://schema.org',
@@ -139,8 +138,11 @@ const buildAreaHtml = (area) => {
     <meta property="og:url" content="${url}" />
     <meta property="og:locale" content="${area.locale}" />
     <meta property="og:image" content="${ogImage}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:secure_url" content="${ogImage}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="3420" />
+    <meta property="og:image:height" content="2214" />
+    <meta property="og:image:alt" content="${escapeHtml(area.title)}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(area.title)}" />
     <meta name="twitter:description" content="${escapeHtml(area.description)}" />
