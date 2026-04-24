@@ -5622,21 +5622,16 @@ Return ONLY valid JSON matching the schema.`;
                     />
                   )}
 
-                  {selectedStation && (
+                  {selectedStation && typeof selectedStation.lat === 'number' && typeof selectedStation.lng === 'number' && (
                     <Marker
                       position={[selectedStation.lat, selectedStation.lng]}
+                      zIndexOffset={1000}
                       icon={L.divIcon({
                         className: 'custom-div-icon station-focus-pin',
-                        html: `<div style="position: relative; width: 56px; height: 56px; display:flex; align-items:center; justify-content:center;">
-                          <span style="position:absolute; inset:0; border-radius:9999px; background: rgba(14,165,233,0.25); animation: stationPulse 1.8s ease-out infinite;"></span>
-                          <span style="position:absolute; inset:8px; border-radius:9999px; background: rgba(14,165,233,0.35); animation: stationPulse 1.8s ease-out infinite 0.4s;"></span>
-                          <div style="position:relative; width:36px; height:36px; border-radius:9999px; background:#0ea5e9; border:3px solid white; box-shadow:0 8px 24px rgba(14,165,233,0.45); display:flex; align-items:center; justify-content:center;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M8 19l-2 3"/><path d="M16 19l2 3"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/></svg>
-                          </div>
-                        </div>`,
-                        iconSize: [56, 56],
-                        iconAnchor: [28, 28],
-                        popupAnchor: [0, -24]
+                        html: `<div class="station-pin-wrap"><span class="station-pulse"></span><span class="station-pulse station-pulse-2"></span><div class="station-pin-core"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></div></div>`,
+                        iconSize: [64, 64],
+                        iconAnchor: [32, 32],
+                        popupAnchor: [0, -28]
                       })}
                     >
                       <Popup>
