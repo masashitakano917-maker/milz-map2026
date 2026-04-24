@@ -97,7 +97,7 @@ const escapeHtml = (s) =>
 
 const buildAreaHtml = (area) => {
   const url = `${SITE}/${area.slug}/`;
-  const ogImage = `${SITE}/og-image.png`;
+  const ogImage = `${SITE}/og-image-milz-v2.png`;
 
   const jsonLdTravel = {
     '@context': 'https://schema.org',
