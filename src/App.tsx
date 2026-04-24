@@ -4589,10 +4589,25 @@ export default function App() {
   const handleSearchLocation = async () => {
     const area = findAreaOption(locationFilter.areaKey);
     const selectedCity = area.cities.find((city) => city.name === locationFilter.cityName);
+
+    if (selectedStation) {
+      mapRef.current?.flyTo([selectedStation.lat, selectedStation.lng], 15);
+      setActiveTab('map');
+      setIsFiltering(false);
+      showToast(
+        locale === 'jp'
+          ? `${selectedStation.name_jp || selectedStation.name}駅へ移動しました`
+          : `Moved to ${selectedStation.name} Station`,
+        'success'
+      );
+      return;
+    }
+
     const targetCenter = selectedCity?.center || area.center;
     const targetZoom = selectedCity?.zoom || area.zoom || 12;
 
     mapRef.current?.flyTo(targetCenter, targetZoom);
+    setActiveTab('map');
     setIsFiltering(false);
   };
 
@@ -5601,10 +5616,48 @@ Return ONLY valid JSON matching the schema.`;
                   )}
 
                   {newPlacePos && newPlacePosition && newPlaceIcon && (
-                    <Marker 
-                      position={newPlacePosition} 
+                    <Marker
+                      position={newPlacePosition}
                       icon={newPlaceIcon}
                     />
+                  )}
+
+                  {selectedStation && (
+                    <Marker
+                      position={[selectedStation.lat, selectedStation.lng]}
+                      icon={L.divIcon({
+                        className: 'custom-div-icon station-focus-pin',
+                        html: `<div style="position: relative; width: 56px; height: 56px; display:flex; align-items:center; justify-content:center;">
+                          <span style="position:absolute; inset:0; border-radius:9999px; background: rgba(14,165,233,0.25); animation: stationPulse 1.8s ease-out infinite;"></span>
+                          <span style="position:absolute; inset:8px; border-radius:9999px; background: rgba(14,165,233,0.35); animation: stationPulse 1.8s ease-out infinite 0.4s;"></span>
+                          <div style="position:relative; width:36px; height:36px; border-radius:9999px; background:#0ea5e9; border:3px solid white; box-shadow:0 8px 24px rgba(14,165,233,0.45); display:flex; align-items:center; justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M8 19l-2 3"/><path d="M16 19l2 3"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/></svg>
+                          </div>
+                        </div>`,
+                        iconSize: [56, 56],
+                        iconAnchor: [28, 28],
+                        popupAnchor: [0, -24]
+                      })}
+                    >
+                      <Popup>
+                        <div className="p-2 min-w-[180px]">
+                          <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-1">Station</div>
+                          <div className="font-black text-black tracking-tight">
+                            {selectedStation.name_jp || selectedStation.name}
+                          </div>
+                          {selectedStation.name_jp && selectedStation.name !== selectedStation.name_jp && (
+                            <div className="text-[10px] text-stone-500 mt-0.5">{selectedStation.name}</div>
+                          )}
+                          {selectedStation.lines && selectedStation.lines.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {selectedStation.lines.slice(0, 4).map((line: string) => (
+                                <span key={line} className="text-[9px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-full">{line}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </Popup>
+                    </Marker>
                   )}
                 </MapContainer>
               )}
