@@ -5465,6 +5465,7 @@ Return ONLY valid JSON matching the schema.`;
                   onSelectPlace={openPlaceDetail}
                   focusTarget={pendingMapFocus}
                   onFocusHandled={() => setPendingMapFocus(null)}
+                  stationFocus={selectedStation ? { lat: selectedStation.lat, lng: selectedStation.lng, name: selectedStation.name, name_jp: selectedStation.name_jp, lines: selectedStation.lines } : null}
                 />
               ) : (
                 <MapContainer
@@ -5628,7 +5629,7 @@ Return ONLY valid JSON matching the schema.`;
                       zIndexOffset={1000}
                       icon={L.divIcon({
                         className: 'custom-div-icon station-focus-pin',
-                        html: `<div class="station-pin-wrap"><span class="station-pulse"></span><span class="station-pulse station-pulse-2"></span><div class="station-pin-core"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></div></div>`,
+                        html: `<div class="station-pin-wrap"><span class="station-pulse"></span><span class="station-pulse station-pulse-2"></span><div class="station-pin-core"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16"/><circle cx="8.5" cy="14" r="1"/><circle cx="15.5" cy="14" r="1"/><path d="M8 17l-2 4"/><path d="M16 17l2 4"/></svg></div></div>`,
                         iconSize: [64, 64],
                         iconAnchor: [32, 32],
                         popupAnchor: [0, -28]

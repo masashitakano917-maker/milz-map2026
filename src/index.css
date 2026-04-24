@@ -30,6 +30,14 @@ html, body, #root {
 }
 
 .station-focus-pin { background: transparent !important; border: none !important; }
+.milz-maptiler-station-marker {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: default;
+  width: 64px;
+  height: 64px;
+}
 .station-pin-wrap {
   position: relative;
   width: 64px;

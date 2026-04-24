@@ -67,6 +67,7 @@ interface TokyoMiniatureMapProps {
   onSelectPlace: (place: any) => void;
   focusTarget: { lat: number; lng: number } | null;
   onFocusHandled: () => void;
+  stationFocus?: { lat: number; lng: number; name: string; name_jp?: string | null; lines?: string[] | null } | null;
 }
 
 declare global {
@@ -131,10 +132,16 @@ function ensureMapTilerAssets() {
   return sdkLoader;
 }
 
-function createMarkerNode(kind: 'place' | 'ai' | 'aiSaved' | 'aiTrend' | 'new', label?: string, category?: string) {
+function createMarkerNode(kind: 'place' | 'ai' | 'aiSaved' | 'aiTrend' | 'new' | 'station', label?: string, category?: string) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'milz-maptiler-marker';
+
+  if (kind === 'station') {
+    el.classList.add('milz-maptiler-station-marker');
+    el.innerHTML = `<div class="station-pin-wrap"><span class="station-pulse"></span><span class="station-pulse station-pulse-2"></span><div class="station-pin-core"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="3"/><path d="M4 11h16"/><circle cx="8.5" cy="14" r="1"/><circle cx="15.5" cy="14" r="1"/><path d="M8 17l-2 4"/><path d="M16 17l2 4"/></svg></div></div>`;
+    return el;
+  }
 
   const inner = document.createElement('span');
   inner.className = `milz-maptiler-marker__inner milz-maptiler-marker__inner--${kind}`;
@@ -366,6 +373,7 @@ export default function TokyoMiniatureMap({
   onSelectPlace,
   focusTarget,
   onFocusHandled,
+  stationFocus = null,
 }: TokyoMiniatureMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -374,6 +382,7 @@ export default function TokyoMiniatureMap({
   const aiTrendMarkerRefs = useRef<any[]>([]);
   const tempMarkerRef = useRef<any | null>(null);
   const addMarkerRef = useRef<any | null>(null);
+  const stationMarkerRef = useRef<any | null>(null);
   const activePopupRef = useRef<any | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const hasKey = Boolean(apiKey && apiKey.trim());
@@ -647,6 +656,26 @@ export default function TokyoMiniatureMap({
         .addTo(map);
     }
   }, [newPlacePos]);
+
+  useEffect(() => {
+    const sdk = window.maptilersdk;
+    const map = mapInstanceRef.current;
+    if (!sdk || !map) return;
+
+    stationMarkerRef.current?.remove?.();
+    stationMarkerRef.current = null;
+    if (stationFocus && typeof stationFocus.lat === 'number' && typeof stationFocus.lng === 'number') {
+      const el = createMarkerNode('station');
+      el.title = stationFocus.name_jp || stationFocus.name;
+      stationMarkerRef.current = new sdk.Marker({ element: el, anchor: 'center' })
+        .setLngLat([stationFocus.lng, stationFocus.lat])
+        .addTo(map);
+    }
+    return () => {
+      stationMarkerRef.current?.remove?.();
+      stationMarkerRef.current = null;
+    };
+  }, [stationFocus]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
