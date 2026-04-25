@@ -224,6 +224,144 @@ function localizeSource(source: string | null | undefined, locale: Locale): stri
   return SOURCE_JP[key] || source;
 }
 
+const NAME_JP: Record<string, string> = {
+  'Sensō-ji': '浅草寺',
+  'Senso-ji': '浅草寺',
+  'Sensoji': '浅草寺',
+  'Sensō-ji Temple': '浅草寺',
+  'Tokyo Skytree': '東京スカイツリー',
+  'TOKYO SKYTREE': '東京スカイツリー',
+  'Tokyo Tower': '東京タワー',
+  'Meiji Jingu': '明治神宮',
+  'Meiji Shrine': '明治神宮',
+  'Imperial Palace': '皇居',
+  'Tokyo Imperial Palace': '皇居',
+  'Tsukiji Outer Market': '築地場外市場',
+  'Tsukiji Market': '築地市場',
+  'Akihabara': '秋葉原',
+  'Shinjuku Gyoen': '新宿御苑',
+  'Shinjuku Gyoen National Garden': '新宿御苑',
+  'Ueno Park': '上野公園',
+  'Yoyogi Park': '代々木公園',
+  'Roppongi Hills': '六本木ヒルズ',
+  'Tokyo Station': '東京駅',
+  'Shibuya Crossing': '渋谷スクランブル交差点',
+  'Shibuya Sky': '渋谷スカイ',
+  'TeamLab Planets': 'チームラボプラネッツ',
+  'teamLab Borderless': 'チームラボボーダレス',
+  'Kyoto': '京都',
+  'Kyoto Station': '京都駅',
+  'Fushimi Inari Taisha': '伏見稲荷大社',
+  'Fushimi Inari Shrine': '伏見稲荷大社',
+  'Kinkaku-ji': '金閣寺',
+  'Kinkakuji': '金閣寺',
+  'Ginkaku-ji': '銀閣寺',
+  'Ginkakuji': '銀閣寺',
+  'Kiyomizu-dera': '清水寺',
+  'Kiyomizudera': '清水寺',
+  'Ryoan-ji': '龍安寺',
+  'Nijo Castle': '二条城',
+  'Nijō Castle': '二条城',
+  'Arashiyama': '嵐山',
+  'Arashiyama Bamboo Grove': '嵐山竹林の小径',
+  'Tofuku-ji': '東福寺',
+  'Tofukuji': '東福寺',
+  'Sanjusangendo': '三十三間堂',
+  'Starbucks': 'スターバックス',
+  'Blue Bottle Coffee': 'ブルーボトルコーヒー',
+};
+
+function localizeName(name: string | null | undefined, locale: Locale): string {
+  if (!name) return '';
+  if (locale === 'en') return name;
+  if (NAME_JP[name]) return NAME_JP[name];
+  const paren = name.match(/^(.+?)\s*[（(]([^)）]+)[)）]\s*$/);
+  if (paren) {
+    const inner = paren[2].trim();
+    if (/[一-龯々〆ぁ-んァ-ヶー]/.test(inner)) return inner;
+  }
+  return name;
+}
+
+const TOKYO_WARDS_JP: Record<string, string> = {
+  'Chiyoda': '千代田区', 'Chuo': '中央区', 'Minato': '港区', 'Shinjuku': '新宿区',
+  'Bunkyo': '文京区', 'Taito': '台東区', 'Sumida': '墨田区', 'Koto': '江東区',
+  'Shinagawa': '品川区', 'Meguro': '目黒区', 'Ota': '大田区', 'Setagaya': '世田谷区',
+  'Shibuya': '渋谷区', 'Nakano': '中野区', 'Suginami': '杉並区', 'Toshima': '豊島区',
+  'Kita': '北区', 'Arakawa': '荒川区', 'Itabashi': '板橋区', 'Nerima': '練馬区',
+  'Adachi': '足立区', 'Katsushika': '葛飾区', 'Edogawa': '江戸川区',
+};
+
+const KYOTO_WARDS_JP: Record<string, string> = {
+  'Nakagyo': '中京区', 'Higashiyama': '東山区', 'Sakyo': '左京区', 'Shimogyo': '下京区',
+  'Ukyo': '右京区', 'Kamigyo': '上京区', 'Yamashina': '山科区', 'Fushimi': '伏見区',
+  'Nishikyo': '西京区', 'Minami': '南区',
+};
+
+const TOWN_JP: Record<string, string> = {
+  Jingūmae: '神宮前', Jingumae: '神宮前',
+  Maruyamachō: '円山町', Maruyamacho: '円山町',
+  Udagawachō: '宇田川町', Udagawacho: '宇田川町',
+  Hiroo: '広尾',
+  Minamiaoyama: '南青山', Kitaaoyama: '北青山', Aoyama: '青山',
+  Kabukichō: '歌舞伎町', Kabukicho: '歌舞伎町',
+  Kitaueno: '北上野',
+  Nihonbashihonchō: '日本橋本町', Nihonbashihoncho: '日本橋本町',
+  Nihonbashi: '日本橋',
+  Oshiage: '押上',
+  Asakusa: '浅草',
+  Akasaka: '赤坂', Roppongi: '六本木', Azabu: '麻布', Azabudai: '麻布台',
+  Ebisu: '恵比寿', Daikanyama: '代官山', Nakameguro: '中目黒',
+  Harajuku: '原宿', Omotesandō: '表参道', Omotesando: '表参道',
+  Shibakōen: '芝公園', Shibakoen: '芝公園',
+  Shimbashi: '新橋', Shinbashi: '新橋', Yurakuchō: '有楽町', Yurakucho: '有楽町',
+  Marunouchi: '丸の内', Otemachi: '大手町',
+  Ginza: '銀座', Tsukiji: '築地',
+  Yanaka: '谷中', Nezu: '根津', Sendagi: '千駄木',
+  Kichijōji: '吉祥寺', Kichijoji: '吉祥寺',
+  Shimokitazawa: '下北沢', Sangenjaya: '三軒茶屋', Jiyūgaoka: '自由が丘', Jiyugaoka: '自由が丘',
+};
+
+function localizeJapaneseAddress(input: string): string {
+  let s = input;
+  s = s.replace(/^Japan,\s*/i, '');
+  s = s.replace(/,\s*Japan$/i, '');
+
+  s = s.replace(/(\d+)-chōme-(\d+)-(\d+)/g, '$1-$2-$3');
+  s = s.replace(/(\d+)-chōme−(\d+)−(\d+)/g, '$1-$2-$3');
+  s = s.replace(/(\d+)-chōme/g, '$1丁目');
+  s = s.replace(/(\d+)−(\d+)−(\d+)/g, '$1-$2-$3');
+  s = s.replace(/(\d+)番地/g, '$1');
+
+  s = s.replace(/\bTokyo\s+(\d{3}-\d{4})/g, '東京都 〒$1');
+  s = s.replace(/\bKyoto\s+(\d{3}-\d{4})/g, '京都府京都市 〒$1');
+  s = s.replace(/〒(\d{3}-\d{4})\s+Tokyo/g, '〒$1 東京都');
+  s = s.replace(/〒(\d{3}-\d{4})\s+Kyoto/g, '〒$1 京都府京都市');
+  s = s.replace(/,\s*東京都\s*,\s*(\d{3}-\d{4})/g, ', 東京都, 〒$1');
+  s = s.replace(/,\s*京都府\s*,\s*(\d{3}-\d{4})/g, ', 京都府, 〒$1');
+
+  for (const [en, jp] of Object.entries(TOKYO_WARDS_JP)) {
+    s = s.replace(new RegExp(`\\b${en} City\\b`, 'g'), jp);
+    s = s.replace(new RegExp(`\\b${en} Ward\\b`, 'g'), jp);
+    s = s.replace(new RegExp(`\\b${en}-ku\\b`, 'g'), jp);
+    s = s.replace(new RegExp(`,\\s*${en}\\s*,`, 'g'), `, ${jp},`);
+  }
+  for (const [en, jp] of Object.entries(KYOTO_WARDS_JP)) {
+    s = s.replace(new RegExp(`\\b${en} Ward\\b`, 'g'), jp);
+    s = s.replace(new RegExp(`\\b${en}-ku\\b`, 'g'), jp);
+  }
+  for (const [en, jp] of Object.entries(TOWN_JP)) {
+    s = s.replace(new RegExp(`\\b${en}\\b`, 'g'), jp);
+  }
+
+  s = s.replace(/\bTokyo\b/g, '東京都');
+  s = s.replace(/\bKyoto\b/g, '京都府京都市');
+
+  s = s.replace(/\s+,/g, ',').replace(/,{2,}/g, ',').replace(/\s{2,}/g, ' ').trim();
+  s = s.replace(/^[,、\s]+/, '').replace(/[,、\s]+$/, '');
+  return s;
+}
+
 const ADDRESS_REPLACEMENTS_JP: Array<[RegExp, string]> = [
   [/, ?USA\b/g, ''],
   [/, ?United States\b/g, ''],
@@ -366,9 +504,15 @@ function localizeAddress(address: string | null | undefined, locale: Locale): st
   if (!address) return '';
   if (locale === 'en') return address;
   let out = address;
+  const looksJapanese = /(Tokyo|Kyoto|chōme|Ward\b|City,|Japan|東京|京都|〒|丁目|区|府|都)/.test(out);
+  if (looksJapanese) {
+    out = localizeJapaneseAddress(out);
+  }
   for (const [re, rep] of ADDRESS_REPLACEMENTS_JP) out = out.replace(re, rep);
-  for (const [re, rep] of STREET_SUFFIX_JP) out = out.replace(re, rep);
-  out = out.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1丁目');
+  if (!looksJapanese) {
+    for (const [re, rep] of STREET_SUFFIX_JP) out = out.replace(re, rep);
+    out = out.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1丁目');
+  }
   out = out.replace(/^\s*[,、]\s*/, '').replace(/[,、]\s*$/, '');
   out = out.replace(/\s+,/g, ',').replace(/,{2,}/g, ',').replace(/\s{2,}/g, ' ').trim();
   return out;
@@ -642,7 +786,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
                       {localizeSource(spot.source, locale)}
                     </span>
                   </div>
-                  <h4 className="text-base font-black text-black leading-tight line-clamp-2">{spot.name}</h4>
+                  <h4 className="text-base font-black text-black leading-tight line-clamp-2">{localizeName(spot.name, locale)}</h4>
                   {spot.category && (
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
                       {localizeCategory(spot.category, locale)}
