@@ -224,6 +224,156 @@ function localizeSource(source: string | null | undefined, locale: Locale): stri
   return SOURCE_JP[key] || source;
 }
 
+const ADDRESS_REPLACEMENTS_JP: Array<[RegExp, string]> = [
+  [/, ?USA\b/g, ''],
+  [/, ?United States\b/g, ''],
+  [/\bSouth Korea\b/g, '韓国'],
+  [/\bRepublic of Korea\b/g, '韓国'],
+  [/\bJapan,?\s*/g, ''],
+
+  [/\bNew York,? NY\b/g, 'ニューヨーク州ニューヨーク市'],
+  [/\bNew York\b/g, 'ニューヨーク'],
+  [/\bBrooklyn\b/g, 'ブルックリン'],
+  [/\bManhattan\b/g, 'マンハッタン'],
+  [/\bQueens\b/g, 'クイーンズ'],
+  [/\bBronx\b/g, 'ブロンクス'],
+  [/\bStaten Island\b/g, 'スタテンアイランド'],
+  [/\bHoboken\b/g, 'ホーボーケン'],
+  [/\bNorth Bergen\b/g, 'ノースバーゲン'],
+  [/\bSecaucus\b/g, 'セコーカス'],
+  [/\bJersey City\b/g, 'ジャージーシティ'],
+  [/\bNewark\b/g, 'ニューアーク'],
+  [/, ?NJ\b/g, ', ニュージャージー州'],
+  [/, ?NY\b/g, ', ニューヨーク州'],
+
+  [/\bHonolulu\b/g, 'ホノルル'],
+  [/\bWaikiki\b/g, 'ワイキキ'],
+  [/\bKailua\b/g, 'カイルア'],
+  [/, ?HI\b/g, ', ハワイ州'],
+
+  [/\bSeoul Special City\b/g, 'ソウル特別市'],
+  [/\bSeoul\b/g, 'ソウル'],
+  [/\b서울특별시\b/g, 'ソウル特別市'],
+  [/\b서울\b/g, 'ソウル'],
+  [/\bJongno District\b/g, '鍾路区'],
+  [/\bJongno-gu\b/g, '鍾路区'],
+  [/\b종로구\b/g, '鍾路区'],
+  [/\bJung District\b/g, '中区'],
+  [/\bJung-gu\b/g, '中区'],
+  [/\b중구\b/g, '中区'],
+  [/\bYongsan District\b/g, '龍山区'],
+  [/\bYongsan-gu\b/g, '龍山区'],
+  [/\b용산구\b/g, '龍山区'],
+  [/\bGangnam District\b/g, '江南区'],
+  [/\bGangnam-gu\b/g, '江南区'],
+  [/\b강남구\b/g, '江南区'],
+  [/\bMapo District\b/g, '麻浦区'],
+  [/\bMapo-gu\b/g, '麻浦区'],
+  [/\b마포구\b/g, '麻浦区'],
+  [/\bSeongdong District\b/g, '城東区'],
+  [/\b성동구\b/g, '城東区'],
+  [/\bGwangjin District\b/g, '広津区'],
+  [/\b광진구\b/g, '広津区'],
+  [/\bSeodaemun District\b/g, '西大門区'],
+  [/\b서대문구\b/g, '西大門区'],
+  [/\bSeocho District\b/g, '瑞草区'],
+  [/\b서초구\b/g, '瑞草区'],
+  [/\bSongpa District\b/g, '松坡区'],
+  [/\b송파구\b/g, '松坡区'],
+  [/\bGangdong District\b/g, '江東区'],
+  [/\b강동구\b/g, '江東区'],
+  [/\bGangseo District\b/g, '江西区'],
+  [/\b강서구\b/g, '江西区'],
+  [/\bYongdeungpo District\b/g, '永登浦区'],
+  [/\bYeongdeungpo District\b/g, '永登浦区'],
+  [/\b영등포구\b/g, '永登浦区'],
+  [/\bSeongbuk District\b/g, '城北区'],
+  [/\b성북구\b/g, '城北区'],
+  [/\bDongdaemun District\b/g, '東大門区'],
+  [/\b동대문구\b/g, '東大門区'],
+  [/\bGuro District\b/g, '九老区'],
+  [/\b구로구\b/g, '九老区'],
+  [/\bNowon District\b/g, '蘆原区'],
+  [/\b노원구\b/g, '蘆原区'],
+  [/\bDongjak District\b/g, '銅雀区'],
+  [/\b동작구\b/g, '銅雀区'],
+  [/\bGwanak District\b/g, '冠岳区'],
+  [/\b관악구\b/g, '冠岳区'],
+  [/\b명동\b/g, '明洞'],
+  [/\b이태원동\b/g, '梨泰院洞'],
+  [/\b청담동\b/g, '清潭洞'],
+  [/\b신사동\b/g, '新沙洞'],
+  [/\b삼성동\b/g, '三成洞'],
+  [/\b역삼동\b/g, '駅三洞'],
+  [/\b논현동\b/g, '論峴洞'],
+  [/\b압구정동\b/g, '狎鴎亭洞'],
+  [/\b서교동\b/g, '西橋洞'],
+  [/\b연남동\b/g, '延南洞'],
+  [/\b합정동\b/g, '合井洞'],
+  [/\b상수동\b/g, '上水洞'],
+  [/\b성수동\b/g, '聖水洞'],
+  [/\b여의도동\b/g, '汝矣島洞'],
+  [/\b소공동\b/g, '小公洞'],
+  [/\b사직동\b/g, '社稷洞'],
+  [/\b인사동\b/g, '仁寺洞'],
+  [/\bInsa-dong\b/g, '仁寺洞'],
+  [/\bMyeong-?dong\b/g, '明洞'],
+  [/\bItaewon\b/g, '梨泰院'],
+  [/\bGangnam\b/g, '江南'],
+  [/\bHongdae\b/g, '弘大'],
+  [/\bSeongsu-?dong\b/g, '聖水洞'],
+  [/\bYeonnam-?dong\b/g, '延南洞'],
+  [/\bHapjeong-?dong\b/g, '合井洞'],
+  [/\bApgujeong\b/g, '狎鴎亭'],
+  [/\bSinsa-?dong\b/g, '新沙洞'],
+  [/\bCheongdam-?dong\b/g, '清潭洞'],
+  [/\bSamseong-?dong\b/g, '三成洞'],
+  [/\bYeoksam-?dong\b/g, '駅三洞'],
+  [/\bJong-?ro\b/g, '鍾路'],
+  [/\bEuljiro\b/g, '乙支路'],
+];
+
+const STREET_SUFFIX_JP: Array<[RegExp, string]> = [
+  [/\bBlvd\b\.?/g, 'ブルバード'],
+  [/\bBoulevard\b/g, 'ブルバード'],
+  [/\bAvenue\b/g, 'アベニュー'],
+  [/\bAve\b\.?/g, 'アベニュー'],
+  [/\bStreet\b/g, 'ストリート'],
+  [/\bSt\b\.?/g, 'ストリート'],
+  [/\bRoad\b/g, 'ロード'],
+  [/\bRd\b\.?/g, 'ロード'],
+  [/\bDrive\b/g, 'ドライブ'],
+  [/\bDr\b\.?/g, 'ドライブ'],
+  [/\bLane\b/g, 'レーン'],
+  [/\bLn\b\.?/g, 'レーン'],
+  [/\bPlace\b/g, 'プレイス'],
+  [/\bPl\b\.?/g, 'プレイス'],
+  [/\bCourt\b/g, 'コート'],
+  [/\bCt\b\.?/g, 'コート'],
+  [/\bHighway\b/g, 'ハイウェイ'],
+  [/\bHwy\b\.?/g, 'ハイウェイ'],
+  [/\bParkway\b/g, 'パークウェイ'],
+  [/\bPkwy\b\.?/g, 'パークウェイ'],
+  [/\bSquare\b/g, 'スクエア'],
+  [/\bSq\b\.?/g, 'スクエア'],
+  [/\bSuite\b/g, 'スイート'],
+  [/\bSte\b\.?/g, 'スイート'],
+  [/\bFloor\b/g, '階'],
+  [/\bFl\b\.?/g, '階'],
+];
+
+function localizeAddress(address: string | null | undefined, locale: Locale): string {
+  if (!address) return '';
+  if (locale === 'en') return address;
+  let out = address;
+  for (const [re, rep] of ADDRESS_REPLACEMENTS_JP) out = out.replace(re, rep);
+  for (const [re, rep] of STREET_SUFFIX_JP) out = out.replace(re, rep);
+  out = out.replace(/(\d+)(st|nd|rd|th)\b/gi, '$1丁目');
+  out = out.replace(/^\s*[,、]\s*/, '').replace(/[,、]\s*$/, '');
+  out = out.replace(/\s+,/g, ',').replace(/,{2,}/g, ',').replace(/\s{2,}/g, ' ').trim();
+  return out;
+}
+
 const COPY = {
   jp: {
     eyebrow: 'AI TREND SPOTS',
@@ -499,7 +649,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
                     </p>
                   )}
                   {spot.address && (
-                    <p className="text-xs text-stone-500 font-medium line-clamp-2">{spot.address}</p>
+                    <p className="text-xs text-stone-500 font-medium line-clamp-2">{localizeAddress(spot.address, locale)}</p>
                   )}
                   {nearest && (
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-600 bg-stone-50 border border-stone-100 rounded-full px-2.5 py-1 w-fit">
