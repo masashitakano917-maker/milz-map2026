@@ -123,6 +123,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
   const weekStart = useMemo(() => startOfWeekISO(), []);
 
   const stationsSupported = areaKey !== 'hawaii';
+  const stationsAreaKey = areaKey === 'ny' ? 'new-york' : areaKey;
 
   useEffect(() => {
     if (!stationsSupported) {
@@ -136,7 +137,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
         const { data, error } = await supabase
           .from('stations')
           .select('id, name, name_jp, lines, lat, lng')
-          .eq('area_key', areaKey);
+          .eq('area_key', stationsAreaKey);
         if (error) throw error;
         if (!active) return;
         setStations((data as StationRow[]) || []);
@@ -147,7 +148,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
     return () => {
       active = false;
     };
-  }, [areaKey, stationsSupported]);
+  }, [stationsAreaKey, stationsSupported]);
 
   const nearestStationFor = (spot: TrendSpot) => {
     if (!stationsSupported) return null;
