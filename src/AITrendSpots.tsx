@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ExternalLink, Bookmark, Heart, Loader as Loader2, TrendingUp } from 'lucide-react';
+import { ExternalLink, Bookmark, Heart, Loader as Loader2, TrendingUp, Brain as Train } from 'lucide-react';
 import { getSupabase } from './supabase';
 
 type Locale = 'jp' | 'en';
@@ -25,6 +25,32 @@ type WeeklyRow = {
   trend_score: number;
   spot: TrendSpot | null;
 };
+
+type StationRow = {
+  id: string;
+  name: string;
+  name_jp: string | null;
+  lines: string[] | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatDistance(m: number, locale: 'jp' | 'en'): string {
+  if (m < 1000) return `${Math.round(m)}m`;
+  const km = (m / 1000).toFixed(1);
+  return locale === 'jp' ? `${km}km` : `${km} km`;
+}
 
 type Props = {
   areaKey: AreaKey;
@@ -93,7 +119,43 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [favoritingId, setFavoritingId] = useState<string | null>(null);
+  const [stations, setStations] = useState<StationRow[]>([]);
   const weekStart = useMemo(() => startOfWeekISO(), []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const supabase = getSupabase();
+      try {
+        const { data, error } = await supabase
+          .from('stations')
+          .select('id, name, name_jp, lines, lat, lng')
+          .eq('area_key', areaKey);
+        if (error) throw error;
+        if (!active) return;
+        setStations((data as StationRow[]) || []);
+      } catch {
+        if (active) setStations([]);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [areaKey]);
+
+  const nearestStationFor = (spot: TrendSpot) => {
+    if (spot.lat == null || spot.lng == null) return null;
+    let best: { station: StationRow; distance: number } | null = null;
+    for (const s of stations) {
+      if (s.lat == null || s.lng == null) continue;
+      const d = haversineMeters(
+        { lat: spot.lat, lng: spot.lng },
+        { lat: s.lat, lng: s.lng }
+      );
+      if (!best || d < best.distance) best = { station: s, distance: d };
+    }
+    return best;
+  };
 
   useEffect(() => {
     let active = true;
@@ -244,6 +306,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
             const isSubmitting = submittingId === spot.id;
             const isFavorited = favoriteIds.has(spot.id);
             const isFavoriting = favoritingId === spot.id;
+            const nearest = nearestStationFor(spot);
             return (
               <motion.article
                 key={spot.id}
@@ -269,6 +332,17 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
                   )}
                   {spot.address && (
                     <p className="text-xs text-stone-500 font-medium line-clamp-2">{spot.address}</p>
+                  )}
+                  {nearest && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-600 bg-stone-50 border border-stone-100 rounded-full px-2.5 py-1 w-fit">
+                      <Train className="w-3 h-3 text-stone-400" />
+                      <span className="truncate max-w-[140px]">
+                        {locale === 'jp' && nearest.station.name_jp ? nearest.station.name_jp : nearest.station.name}
+                      </span>
+                      <span className="text-stone-400 tabular-nums">
+                        · {formatDistance(nearest.distance, locale)}
+                      </span>
+                    </div>
                   )}
                   <div className="flex items-center gap-2 pt-1">
                     <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">

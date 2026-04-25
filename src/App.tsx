@@ -6412,11 +6412,17 @@ Return ONLY valid JSON matching the schema.`;
                     <div className="bg-white p-5 md:p-8 xl:p-12 rounded-[2rem] md:rounded-[3rem] border border-stone-100 shadow-sm space-y-6 md:space-y-10">
                       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">ロケーションフィルター</p>
-                          <h3 className="text-2xl font-black text-black tracking-tight">Active region</h3>
+                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
+                            {aiView === 'trend' ? 'AREA FILTER' : 'ロケーションフィルター'}
+                          </p>
+                          <h3 className="text-2xl font-black text-black tracking-tight">
+                            {aiView === 'trend' ? 'Select a region' : 'Active region'}
+                          </h3>
                         </div>
                         <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                          Regionを切り替えると、MapとAIの対象地域も切り替わります。
+                          {aiView === 'trend'
+                            ? 'AI Weekly Trend は都市(Area)単位で集計されます。'
+                            : 'Regionを切り替えると、MapとAIの対象地域も切り替わります。'}
                         </p>
                       </div>
 
@@ -6441,6 +6447,7 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
                       </div>
 
+                      {aiView === 'recommend' && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Area</label>
@@ -6475,8 +6482,9 @@ Return ONLY valid JSON matching the schema.`;
                           </select>
                         </div>
                       </div>
+                      )}
 
-                      {currentAreaStations.length > 0 && (
+                      {aiView === 'recommend' && currentAreaStations.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
                             <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Station</label>
