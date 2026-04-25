@@ -79,14 +79,13 @@ export default function MilzLanding({
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-black">
         <div className="max-w-[1500px] mx-auto px-5 md:px-8 h-[72px] flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="font-display text-[44px] leading-none">MILZ</div>
-            <span className="label hidden md:inline">CURATED · 2025</span>
+            <a href="#index" className="font-display text-[44px] leading-none">MILZ</a>
           </div>
           <nav className="hidden md:flex items-center gap-8 font-cond uppercase text-[14px] tracking-[0.04em]">
-            <span className="cursor-default">Index</span>
-            <span className="cursor-default">Cities</span>
-            <span className="cursor-default">Selection</span>
-            <span className="cursor-default">About</span>
+            <a href="#index" className="hover:opacity-60 transition">Index</a>
+            <a href="#cities" className="hover:opacity-60 transition">Cities</a>
+            <a href="#selection" className="hover:opacity-60 transition">Selection</a>
+            <a href="#about" className="hover:opacity-60 transition">About</a>
           </nav>
           <div className="flex items-center gap-3">
             <button onClick={() => setLang(isJP ? 'en' : 'jp')} className="label-ink hover:opacity-60 transition">
@@ -99,7 +98,7 @@ export default function MilzLanding({
         </div>
       </header>
 
-      <section className="relative border-b border-black">
+      <section id="index" className="relative border-b border-black scroll-mt-[72px]">
         <div className="max-w-[1500px] mx-auto px-5 md:px-8 pt-14 pb-8">
           <div className="flex items-center justify-between mb-8 gap-6">
             <div className="label-ink">ISSUE N°001 — MMXXV</div>
@@ -143,7 +142,7 @@ export default function MilzLanding({
         </div>
       </section>
 
-      <section className="border-b border-black overflow-hidden">
+      <section id="cities" className="border-b border-black overflow-hidden scroll-mt-[72px]">
         <div className="max-w-[1500px] mx-auto">
           <div className="grid grid-cols-5 divide-x divide-black">
             {[
@@ -171,7 +170,7 @@ export default function MilzLanding({
         </div>
       </section>
 
-      <section className="bg-black text-white border-b border-black">
+      <section id="about" className="bg-black text-white border-b border-black scroll-mt-[72px]">
         <div className="max-w-[1500px] mx-auto px-5 md:px-8 py-24 md:py-40">
           <div className="label mb-10" style={{ color: 'var(--gray-500)' }}>§ 01 — EDITOR'S NOTE</div>
           <div className="font-display text-[13vw] md:text-[9vw] leading-[0.92] tracking-[-0.01em]">
@@ -247,7 +246,7 @@ export default function MilzLanding({
         </div>
       </section>
 
-      <section className="border-b border-black">
+      <section id="selection" className="border-b border-black scroll-mt-[72px]">
         <div className="max-w-[1500px] mx-auto px-5 md:px-8 py-20 md:py-28">
           <div className="label mb-5">§ 03 — THE APP</div>
           <div className="grid grid-cols-12 gap-8 items-start">
