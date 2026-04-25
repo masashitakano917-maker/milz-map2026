@@ -2453,6 +2453,8 @@ export default function App() {
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResults, setAiResults] = useState<AIResults | null>(null);
+  const [aiView, setAiView] = useState<'recommend' | 'trend'>('recommend');
+  const [aiTrendRevealed, setAiTrendRevealed] = useState(false);
   const [aiResultsLocale, setAiResultsLocale] = useState<Locale | null>(null);
   const [aiResultsLocationKey, setAiResultsLocationKey] = useState<string>('tokyo::Shibuya');
   const [aiEditMode, setAiEditMode] = useState<AiEditMode>('family');
@@ -6384,6 +6386,28 @@ Return ONLY valid JSON matching the schema.`;
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   {/* Left Column: Filter & Action */}
                   <div className="lg:col-span-8 space-y-8">
+                    {/* AI View Toggle */}
+                    <div className="bg-white p-2 rounded-full border border-stone-100 shadow-sm flex items-center gap-1">
+                      {([
+                        { key: 'recommend', label: 'AI Recommendation' },
+                        { key: 'trend', label: 'AI Weekly Trend' },
+                      ] as const).map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setAiView(tab.key)}
+                          className={cn(
+                            'flex-1 px-4 py-3 text-[11px] font-black uppercase tracking-[0.25em] rounded-full transition-all',
+                            aiView === tab.key
+                              ? 'bg-black text-white'
+                              : 'bg-transparent text-stone-500 hover:text-black'
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
                     {/* Location Filter Card */}
                     <div className="bg-white p-5 md:p-8 xl:p-12 rounded-[2rem] md:rounded-[3rem] border border-stone-100 shadow-sm space-y-6 md:space-y-10">
                       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
@@ -6501,7 +6525,13 @@ Return ONLY valid JSON matching the schema.`;
 
                     <div className="space-y-6">
                       <button
-                        onClick={handleAiRecommend}
+                        onClick={() => {
+                          if (aiView === 'recommend') {
+                            handleAiRecommend();
+                          } else {
+                            setAiTrendRevealed(true);
+                          }
+                        }}
                         disabled={aiLoading}
                         className="w-full p-6 md:p-10 bg-[#1A1A1A] text-white font-black rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center gap-3 md:gap-4 shadow-2xl active:scale-95 transition-all disabled:opacity-50 tracking-[0.25em] md:tracking-[0.4em] text-[11px] md:text-xs hover:bg-black group"
                       >
@@ -6510,14 +6540,16 @@ Return ONLY valid JSON matching the schema.`;
                       </button>
                     </div>
 
-                    <AITrendSpots
-                      areaKey={AI_TREND_AREA_MAP[locationFilter.areaKey] ?? 'tokyo'}
-                      locale={locale}
-                      userId={user?.id ?? null}
-                    />
+                    {aiView === 'trend' && aiTrendRevealed && (
+                      <AITrendSpots
+                        areaKey={AI_TREND_AREA_MAP[locationFilter.areaKey] ?? 'tokyo'}
+                        locale={locale}
+                        userId={user?.id ?? null}
+                      />
+                    )}
 
                     {/* Results Area */}
-                    {aiResults && (
+                    {aiView === 'recommend' && aiResults && (
                       <div className="space-y-8 pt-8">
                         {aiResults.recommendations && (
                           <section className="space-y-6">
