@@ -122,7 +122,13 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
   const [stations, setStations] = useState<StationRow[]>([]);
   const weekStart = useMemo(() => startOfWeekISO(), []);
 
+  const stationsSupported = areaKey !== 'hawaii';
+
   useEffect(() => {
+    if (!stationsSupported) {
+      setStations([]);
+      return;
+    }
     let active = true;
     (async () => {
       const supabase = getSupabase();
@@ -141,9 +147,10 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
     return () => {
       active = false;
     };
-  }, [areaKey]);
+  }, [areaKey, stationsSupported]);
 
   const nearestStationFor = (spot: TrendSpot) => {
+    if (!stationsSupported) return null;
     if (spot.lat == null || spot.lng == null) return null;
     let best: { station: StationRow; distance: number } | null = null;
     for (const s of stations) {
