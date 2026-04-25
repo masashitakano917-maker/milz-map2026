@@ -9,8 +9,11 @@ type AreaKey = 'ny' | 'tokyo' | 'kyoto' | 'seoul' | 'hawaii';
 type TrendSpot = {
   id: string;
   name: string;
+  name_jp: string | null;
   category: string;
+  category_jp: string | null;
   address: string;
+  address_jp: string | null;
   website_url: string;
   source: string;
   trend_score: number;
@@ -628,7 +631,7 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
           .select(`
             rank,
             trend_score,
-            spot:ai_trend_spots(id,name,category,address,website_url,source,trend_score,area_key,city_name,lat,lng)
+            spot:ai_trend_spots(id,name,name_jp,category,category_jp,address,address_jp,website_url,source,trend_score,area_key,city_name,lat,lng)
           `)
           .eq('area_key', areaKey)
           .eq('week_start', weekStart)
@@ -786,14 +789,14 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
                       {localizeSource(spot.source, locale)}
                     </span>
                   </div>
-                  <h4 className="text-base font-black text-black leading-tight line-clamp-2">{localizeName(spot.name, locale)}</h4>
+                  <h4 className="text-base font-black text-black leading-tight line-clamp-2">{locale === 'jp' && spot.name_jp ? spot.name_jp : localizeName(spot.name, locale)}</h4>
                   {spot.category && (
                     <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                      {localizeCategory(spot.category, locale)}
+                      {locale === 'jp' && spot.category_jp ? spot.category_jp : localizeCategory(spot.category, locale)}
                     </p>
                   )}
                   {spot.address && (
-                    <p className="text-xs text-stone-500 font-medium line-clamp-2">{localizeAddress(spot.address, locale)}</p>
+                    <p className="text-xs text-stone-500 font-medium line-clamp-2">{locale === 'jp' && spot.address_jp ? spot.address_jp : localizeAddress(spot.address, locale)}</p>
                   )}
                   {nearest && (
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-600 bg-stone-50 border border-stone-100 rounded-full px-2.5 py-1 w-fit">
