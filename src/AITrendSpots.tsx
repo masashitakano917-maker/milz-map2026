@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { ExternalLink, Bookmark, Heart, Loader as Loader2, TrendingUp, Brain as Train } from 'lucide-react';
+import { ExternalLink, Bookmark, Heart, Loader as Loader2, TrendingUp, Brain as Train, MapPin } from 'lucide-react';
 import { getSupabase } from './supabase';
 
 type Locale = 'jp' | 'en';
@@ -59,6 +59,7 @@ type Props = {
   areaKey: AreaKey;
   locale: Locale;
   userId?: string | null;
+  onShowOnMap?: (coords: { lat: number; lng: number }, name: string) => void;
 };
 
 const AREA_LABEL: Record<Locale, Record<AreaKey, string>> = {
@@ -532,6 +533,8 @@ const COPY = {
     scoreLabel: 'Trend Score',
     suggest: '編集部に推薦',
     suggested: '推薦済み',
+    showOnMap: 'MAPで見る',
+    noCoords: '位置情報が登録されていません',
     save: 'お気に入り',
     saved: '保存済み',
     signInToSave: 'ログインで保存',
@@ -549,6 +552,8 @@ const COPY = {
     scoreLabel: 'Trend Score',
     suggest: 'Suggest to editors',
     suggested: 'Suggested',
+    showOnMap: 'View on map',
+    noCoords: 'No coordinates available',
     save: 'Save',
     saved: 'Saved',
     signInToSave: 'Sign in to save',
@@ -566,7 +571,7 @@ function startOfWeekISO(d = new Date()): string {
   return m.toISOString().slice(0, 10);
 }
 
-export default function AITrendSpots({ areaKey, locale, userId }: Props) {
+export default function AITrendSpots({ areaKey, locale, userId, onShowOnMap }: Props) {
   const t = COPY[locale];
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<WeeklyRow[]>([]);
@@ -820,6 +825,21 @@ export default function AITrendSpots({ areaKey, locale, userId }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-2 pt-2 border-t border-stone-100">
+                  {onShowOnMap && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (spot.lat == null || spot.lng == null) return;
+                        onShowOnMap({ lat: spot.lat, lng: spot.lng }, locale === 'jp' && spot.name_jp ? spot.name_jp : spot.name);
+                      }}
+                      disabled={spot.lat == null || spot.lng == null}
+                      title={spot.lat == null || spot.lng == null ? t.noCoords : undefined}
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] py-2 rounded-full border bg-black text-white border-black hover:bg-stone-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      {t.showOnMap}
+                    </button>
+                  )}
                   <div className="flex items-center gap-2">
                     {spot.website_url && (
                       <a

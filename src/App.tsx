@@ -568,6 +568,390 @@ function AdminStatsPanel({ locale }: { locale: 'jp' | 'en' }) {
   );
 }
 
+type SuggestionStatus = 'pending' | 'accepted' | 'rejected';
+
+type EditorSuggestionRow = {
+  id: string;
+  status: SuggestionStatus;
+  note: string | null;
+  created_at: string;
+  user_id: string | null;
+  spot: {
+    id: string;
+    name: string;
+    name_jp: string | null;
+    area_key: string;
+    city_name: string | null;
+    category: string | null;
+    address: string | null;
+    address_jp: string | null;
+    website_url: string | null;
+    source: string | null;
+    trend_score: number | null;
+    lat: number | null;
+    lng: number | null;
+  } | null;
+  profile?: { display_name: string | null; email: string | null } | null;
+};
+
+function AdminEditorSuggestionsPanel({
+  locale,
+  onShowOnMap,
+}: {
+  locale: 'jp' | 'en';
+  onShowOnMap?: (coords: { lat: number; lng: number }) => void;
+}) {
+  const [rows, setRows] = useState<EditorSuggestionRow[]>([]);
+  const [filter, setFilter] = useState<SuggestionStatus | 'all'>('pending');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      const supabase = getSupabase();
+      if (!supabase) {
+        if (!cancelled) {
+          setError('Supabase not configured');
+          setLoading(false);
+        }
+        return;
+      }
+      const { data, error } = await supabase
+        .from('ai_editor_suggestions')
+        .select(`
+          id, status, note, created_at, user_id,
+          spot:ai_trend_spots(id,name,name_jp,area_key,city_name,category,address,address_jp,website_url,source,trend_score,lat,lng)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (cancelled) return;
+      if (error) {
+        setError(error.message);
+        setRows([]);
+        setLoading(false);
+        return;
+      }
+      const baseRows: EditorSuggestionRow[] = (data ?? []).map((r: any) => ({
+        id: r.id,
+        status: r.status,
+        note: r.note,
+        created_at: r.created_at,
+        user_id: r.user_id,
+        spot: Array.isArray(r.spot) ? r.spot[0] ?? null : r.spot ?? null,
+      }));
+      const userIds = Array.from(new Set(baseRows.map((r) => r.user_id).filter((v): v is string => !!v)));
+      let profileMap: Record<string, { display_name: string | null; email: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', userIds);
+        profileMap = Object.fromEntries(
+          (profiles ?? []).map((p: any) => [p.id, { display_name: p.display_name, email: p.email }])
+        );
+      }
+      if (cancelled) return;
+      setRows(baseRows.map((r) => ({ ...r, profile: r.user_id ? profileMap[r.user_id] ?? null : null })));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTick]);
+
+  const counts = useMemo(() => {
+    const c = { pending: 0, accepted: 0, rejected: 0, total: rows.length };
+    for (const r of rows) {
+      if (r.status === 'pending') c.pending += 1;
+      else if (r.status === 'accepted') c.accepted += 1;
+      else if (r.status === 'rejected') c.rejected += 1;
+    }
+    return c;
+  }, [rows]);
+
+  const filtered = useMemo(
+    () => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)),
+    [rows, filter]
+  );
+
+  const topSuggested = useMemo(() => {
+    const map = new Map<string, { name: string; area: string; cnt: number }>();
+    for (const r of rows) {
+      if (!r.spot) continue;
+      const key = r.spot.id;
+      const name = locale === 'jp' && r.spot.name_jp ? r.spot.name_jp : r.spot.name;
+      const cur = map.get(key);
+      if (cur) cur.cnt += 1;
+      else map.set(key, { name, area: r.spot.area_key, cnt: 1 });
+    }
+    return Array.from(map.values()).sort((a, b) => b.cnt - a.cnt).slice(0, 5);
+  }, [rows, locale]);
+
+  async function setStatus(id: string, next: SuggestionStatus) {
+    setUpdatingId(id);
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from('ai_editor_suggestions')
+      .update({ status: next })
+      .eq('id', id);
+    if (!error) {
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: next } : r)));
+    }
+    setUpdatingId(null);
+  }
+
+  const tabs: { key: SuggestionStatus | 'all'; label: string; cnt: number; tone: string }[] = [
+    {
+      key: 'pending',
+      label: locale === 'jp' ? '未対応' : 'Pending',
+      cnt: counts.pending,
+      tone: 'bg-amber-500',
+    },
+    {
+      key: 'accepted',
+      label: locale === 'jp' ? '採用' : 'Accepted',
+      cnt: counts.accepted,
+      tone: 'bg-emerald-500',
+    },
+    {
+      key: 'rejected',
+      label: locale === 'jp' ? '却下' : 'Rejected',
+      cnt: counts.rejected,
+      tone: 'bg-stone-400',
+    },
+    { key: 'all', label: locale === 'jp' ? 'すべて' : 'All', cnt: counts.total, tone: 'bg-black' },
+  ];
+
+  function timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return locale === 'jp' ? 'たった今' : 'just now';
+    if (m < 60) return locale === 'jp' ? `${m}分前` : `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return locale === 'jp' ? `${h}時間前` : `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return locale === 'jp' ? `${d}日前` : `${d}d ago`;
+    return new Date(iso).toLocaleDateString(locale === 'jp' ? 'ja-JP' : 'en-US');
+  }
+
+  return (
+    <section className="bg-white border border-stone-300/80 rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.06)] p-5 md:p-8 xl:p-10 space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.32em] text-stone-400 flex items-center gap-2">
+            <Bookmark className="w-3 h-3" />
+            ADMIN · EDITOR INBOX
+          </div>
+          <h3 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-black">
+            {locale === 'jp' ? 'ユーザーからの推薦受信箱' : 'Editor suggestions inbox'}
+          </h3>
+          <p className="mt-1 text-sm text-stone-500">
+            {locale === 'jp'
+              ? 'AI Trendから上がってきた推薦を確認し、編集部のSPOT候補として採用・却下できます。'
+              : 'Review suggestions from AI Trend and decide what to promote into curated SPOTS.'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {counts.pending > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em]">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              {counts.pending} {locale === 'jp' ? '未対応' : 'pending'}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setRefreshTick((n) => n + 1)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black transition-all"
+          >
+            {locale === 'jp' ? '更新' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setFilter(tab.key)}
+            className={cn(
+              'rounded-[1.4rem] border p-4 text-left transition-all',
+              filter === tab.key
+                ? 'border-black bg-black text-white shadow-[0_10px_30px_rgba(0,0,0,0.12)]'
+                : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-stone-400'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span className={cn('w-2 h-2 rounded-full', tab.tone)} />
+              <div className={cn('text-[9px] font-black uppercase tracking-[0.22em]', filter === tab.key ? 'text-white/80' : 'text-stone-400')}>
+                {tab.label}
+              </div>
+            </div>
+            <div className="mt-3 text-3xl font-black tracking-tight tabular-nums">{tab.cnt}</div>
+          </button>
+        ))}
+      </div>
+
+      {topSuggested.length > 0 && (
+        <div className="rounded-[1.4rem] border border-stone-200 bg-stone-50 p-4">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-400 mb-3">
+            {locale === 'jp' ? '推薦が多いスポット TOP5' : 'Most-suggested spots · Top 5'}
+          </div>
+          <div className="space-y-2">
+            {topSuggested.map((t, i) => {
+              const max = topSuggested[0].cnt || 1;
+              const pct = Math.round((t.cnt / max) * 100);
+              return (
+                <div key={`${t.name}-${i}`} className="flex items-center gap-3">
+                  <div className="w-6 text-[11px] font-black tabular-nums text-stone-400">{i + 1}</div>
+                  <div className="flex-1 min-w-0 truncate text-[12px] font-bold text-stone-800">{t.name}</div>
+                  <div className="hidden sm:block w-24 h-2 rounded-full bg-stone-200 overflow-hidden">
+                    <div className="h-full bg-black" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="w-12 text-right text-[11px] font-black tabular-nums text-stone-700">×{t.cnt}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-[1.2rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {error}
+        </div>
+      )}
+
+      {loading && rows.length === 0 ? (
+        <div className="rounded-[1.2rem] border border-stone-200 bg-stone-50 p-8 text-center text-sm text-stone-500">
+          <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
+          {locale === 'jp' ? '読み込み中…' : 'Loading…'}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-[1.2rem] border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-500">
+          {locale === 'jp' ? '該当する推薦はありません。' : 'No suggestions in this view.'}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((r) => {
+            const spot = r.spot;
+            const suggesterLabel = r.profile?.display_name || r.profile?.email || (locale === 'jp' ? '匿名ユーザー' : 'Anonymous');
+            const name = spot ? (locale === 'jp' && spot.name_jp ? spot.name_jp : spot.name) : (locale === 'jp' ? '(削除済みスポット)' : '(spot removed)');
+            const statusBadge =
+              r.status === 'pending'
+                ? 'bg-amber-100 text-amber-800 border-amber-200'
+                : r.status === 'accepted'
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                : 'bg-stone-100 text-stone-600 border-stone-200';
+            return (
+              <article
+                key={r.id}
+                className="border border-stone-200 rounded-2xl p-4 md:p-5 hover:border-stone-300 transition-all flex flex-col md:flex-row md:items-center gap-4"
+              >
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={cn('text-[9px] font-black uppercase tracking-[0.22em] border rounded-full px-2 py-0.5', statusBadge)}>
+                      {r.status === 'pending' ? (locale === 'jp' ? '未対応' : 'Pending') : r.status === 'accepted' ? (locale === 'jp' ? '採用' : 'Accepted') : (locale === 'jp' ? '却下' : 'Rejected')}
+                    </span>
+                    {spot?.area_key && (
+                      <span className="text-[9px] font-black uppercase tracking-[0.22em] text-stone-400 bg-stone-50 border border-stone-200 rounded-full px-2 py-0.5">
+                        {spot.area_key}
+                      </span>
+                    )}
+                    {spot?.source && (
+                      <span className="text-[9px] font-black uppercase tracking-[0.22em] text-stone-400 bg-stone-50 border border-stone-200 rounded-full px-2 py-0.5">
+                        {spot.source}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-stone-400 font-medium">{timeAgo(r.created_at)}</span>
+                  </div>
+                  <div className="text-base font-black text-black truncate">{name}</div>
+                  {spot?.category && (
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{spot.category}</div>
+                  )}
+                  {spot?.address && (
+                    <div className="text-xs text-stone-500 line-clamp-2">{locale === 'jp' && spot.address_jp ? spot.address_jp : spot.address}</div>
+                  )}
+                  <div className="text-[11px] text-stone-500">
+                    {locale === 'jp' ? '推薦者' : 'Suggested by'}: <span className="font-bold text-stone-700">{suggesterLabel}</span>
+                    {typeof spot?.trend_score === 'number' && (
+                      <>
+                        <span className="mx-2 text-stone-300">·</span>
+                        <span className="font-black text-black tabular-nums">{spot.trend_score.toFixed(1)}</span>
+                        <span className="text-stone-400 text-[10px] uppercase tracking-widest ml-1">trend</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 shrink-0">
+                  {spot?.lat != null && spot?.lng != null && onShowOnMap && (
+                    <button
+                      type="button"
+                      onClick={() => onShowOnMap({ lat: spot.lat as number, lng: spot.lng as number })}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black transition-all"
+                    >
+                      <MapPin className="w-3 h-3" />
+                      MAP
+                    </button>
+                  )}
+                  {spot?.website_url && (
+                    <a
+                      href={spot.website_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black transition-all"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Link
+                    </a>
+                  )}
+                  {r.status !== 'accepted' && (
+                    <button
+                      type="button"
+                      onClick={() => setStatus(r.id, 'accepted')}
+                      disabled={updatingId === r.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.22em] hover:bg-emerald-600 transition-all disabled:opacity-50"
+                    >
+                      {updatingId === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                      {locale === 'jp' ? '採用' : 'Accept'}
+                    </button>
+                  )}
+                  {r.status !== 'rejected' && (
+                    <button
+                      type="button"
+                      onClick={() => setStatus(r.id, 'rejected')}
+                      disabled={updatingId === r.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-300 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-rose-500 hover:text-rose-500 transition-all disabled:opacity-50"
+                    >
+                      <X className="w-3 h-3" />
+                      {locale === 'jp' ? '却下' : 'Reject'}
+                    </button>
+                  )}
+                  {r.status !== 'pending' && (
+                    <button
+                      type="button"
+                      onClick={() => setStatus(r.id, 'pending')}
+                      disabled={updatingId === r.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:border-black hover:text-black transition-all disabled:opacity-50"
+                    >
+                      {locale === 'jp' ? '戻す' : 'Reopen'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function DetailMiniMap({
   lat,
   lng,
@@ -6553,6 +6937,7 @@ Return ONLY valid JSON matching the schema.`;
                         areaKey={AI_TREND_AREA_MAP[locationFilter.areaKey] ?? 'tokyo'}
                         locale={locale}
                         userId={user?.id ?? null}
+                        onShowOnMap={(coords) => focusMapOnCoords(coords)}
                       />
                     )}
 
@@ -7288,6 +7673,13 @@ Return ONLY valid JSON matching the schema.`;
                 </div>
 
                 {role === 'admin' && <AdminStatsPanel locale={locale} />}
+
+                {role === 'admin' && (
+                  <AdminEditorSuggestionsPanel
+                    locale={locale}
+                    onShowOnMap={(coords) => focusMapOnCoords(coords)}
+                  />
+                )}
 
                 <div className="grid gap-6 xl:grid-cols-2">
                   <section className="bg-white border border-stone-300/80 rounded-[2rem] p-5 md:p-6 shadow-[0_18px_60px_rgba(0,0,0,0.05)] space-y-5">
