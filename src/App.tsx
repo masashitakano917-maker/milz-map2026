@@ -599,7 +599,7 @@ function AdminEditorSuggestionsPanel({
   onShowOnMap,
 }: {
   locale: 'jp' | 'en';
-  onShowOnMap?: (coords: { lat: number; lng: number }) => void;
+  onShowOnMap?: (coords: { lat: number; lng: number }, name?: string) => void;
 }) {
   const [rows, setRows] = useState<EditorSuggestionRow[]>([]);
   const [filter, setFilter] = useState<SuggestionStatus | 'all'>('pending');
@@ -892,7 +892,7 @@ function AdminEditorSuggestionsPanel({
                   {spot?.lat != null && spot?.lng != null && onShowOnMap && (
                     <button
                       type="button"
-                      onClick={() => onShowOnMap({ lat: spot.lat as number, lng: spot.lng as number })}
+                      onClick={() => onShowOnMap({ lat: spot.lat as number, lng: spot.lng as number }, name)}
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-stone-200 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black transition-all"
                     >
                       <MapPin className="w-3 h-3" />
@@ -1121,6 +1121,7 @@ interface TempAiPin {
   lat: number;
   lng: number;
   name: string;
+  label?: string;
 }
 interface AiFavoriteTranslation {
   name: string;
@@ -4840,9 +4841,15 @@ export default function App() {
     }));
   }, [aiFavorites, locationFilter.areaKey, locationFilter.cityName]);
 
-  const focusMapOnCoords = (coords: { lat: number; lng: number }) => {
+  const focusMapOnCoords = (
+    coords: { lat: number; lng: number },
+    options?: { name?: string; label?: string }
+  ) => {
     setPendingMapFocus(coords);
     openPlaceDetail(null);
+    if (options?.name) {
+      setTempAiPin({ lat: coords.lat, lng: coords.lng, name: options.name, label: options.label });
+    }
     setActiveTab('map');
   };
 
@@ -5981,21 +5988,37 @@ Return ONLY valid JSON matching the schema.`;
                     <Marker
                       position={[tempAiPin.lat, tempAiPin.lng]}
                       icon={L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style="background-color: black; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-center; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transform: rotate(45deg);"><div style="transform: rotate(-45deg); color: white; font-size: 14px;">✨</div></div>`,
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 32]
+                        className: 'milz-temp-pin',
+                        html: `
+                          <div class="milz-temp-pin__wrap">
+                            <span class="milz-temp-pin__ring"></span>
+                            <span class="milz-temp-pin__ring milz-temp-pin__ring--delayed"></span>
+                            <div class="milz-temp-pin__pin">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                          </div>
+                        `,
+                        iconSize: [56, 72],
+                        iconAnchor: [28, 64],
+                        popupAnchor: [0, -56],
                       })}
+                      eventHandlers={{
+                        add: (e) => {
+                          (e.target as L.Marker).openPopup();
+                        },
+                      }}
                     >
                       <Popup>
-                        <div className="p-2">
-                          <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">AI Recommendation</div>
-                          <div className="font-black text-black uppercase tracking-tight">{tempAiPin.name}</div>
-                          <button 
+                        <div className="p-2 min-w-[200px]">
+                          <div className="text-[10px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">
+                            {tempAiPin.label || (locale === 'jp' ? 'AI レコメンド' : 'AI Recommendation')}
+                          </div>
+                          <div className="font-black text-black tracking-tight text-sm leading-snug">{tempAiPin.name}</div>
+                          <button
                             onClick={() => setTempAiPin(null)}
-                            className="mt-2 text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                            className="mt-2 text-[9px] font-black text-stone-400 uppercase tracking-widest hover:text-black"
                           >
-                            Remove Pin
+                            {locale === 'jp' ? 'ピンを消す' : 'Remove pin'}
                           </button>
                         </div>
                       </Popup>
@@ -6937,7 +6960,12 @@ Return ONLY valid JSON matching the schema.`;
                         areaKey={AI_TREND_AREA_MAP[locationFilter.areaKey] ?? 'tokyo'}
                         locale={locale}
                         userId={user?.id ?? null}
-                        onShowOnMap={(coords) => focusMapOnCoords(coords)}
+                        onShowOnMap={(coords, name) =>
+                          focusMapOnCoords(coords, {
+                            name,
+                            label: locale === 'jp' ? 'AI トレンド' : 'AI Trend',
+                          })
+                        }
                       />
                     )}
 
@@ -7677,7 +7705,12 @@ Return ONLY valid JSON matching the schema.`;
                 {role === 'admin' && (
                   <AdminEditorSuggestionsPanel
                     locale={locale}
-                    onShowOnMap={(coords) => focusMapOnCoords(coords)}
+                    onShowOnMap={(coords, name) =>
+                      focusMapOnCoords(coords, {
+                        name,
+                        label: locale === 'jp' ? '推薦スポット' : 'Suggested Spot',
+                      })
+                    }
                   />
                 )}
 

@@ -349,3 +349,53 @@ img[alt*="MapTiler"] {
 .milz-map-popup__cta { margin-top: 4px; width: 100%; background: #0c0a09; color: #fff; border: none; border-radius: 10px; padding: 10px 14px; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
 .milz-map-popup__cta:hover { background: #292524; }
 .milz-map-popup__cta:active { transform: scale(0.98); }
+
+.milz-temp-pin { background: transparent !important; border: none !important; }
+.milz-temp-pin__wrap {
+  position: relative;
+  width: 56px;
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+.milz-temp-pin__pin {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #f43f5e;
+  border: 3px solid #ffffff;
+  box-shadow: 0 10px 24px rgba(244, 63, 94, 0.45), 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 8px;
+  animation: milzTempPinBounce 1.4s ease-in-out infinite;
+  pointer-events: auto;
+}
+.milz-temp-pin__pin svg { transform: rotate(45deg); }
+.milz-temp-pin__ring {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px;
+  border-radius: 50%;
+  background: rgba(244, 63, 94, 0.35);
+  animation: milzTempPinRing 1.8s ease-out infinite;
+  pointer-events: none;
+}
+.milz-temp-pin__ring--delayed { animation-delay: 0.9s; }
+@keyframes milzTempPinBounce {
+  0%, 100% { transform: rotate(-45deg) translateY(0); }
+  50% { transform: rotate(-45deg) translateY(-6px); }
+}
+@keyframes milzTempPinRing {
+  0% { transform: scale(0.5); opacity: 0.7; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
