@@ -399,6 +399,7 @@ export default function TokyoMiniatureMap({
   const stationMarkerRef = useRef<any | null>(null);
   const activePopupRef = useRef<any | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const hasKey = Boolean(apiKey && apiKey.trim());
   const visualPreset = styleVariant === 'style3' ? 'soft' : styleVariant === 'style4' ? 'miniature' : 'top';
   const preset = TOKYO_ANGLE_PRESETS.top;
@@ -466,6 +467,7 @@ export default function TokyoMiniatureMap({
         map.on('load', () => {
           applyMiniaturePresentation(map, apiKey!, visualPreset, { instant: true, preserveCenter: false });
           syncBounds();
+          setMapReady(true);
         });
 
         map.on('style.load', () => {
@@ -504,6 +506,7 @@ export default function TokyoMiniatureMap({
       mapInstanceRef.current?.remove?.();
       mapInstanceRef.current = null;
       mapRef.current = null;
+      setMapReady(false);
     };
   }, [apiKey, hasKey, visualPreset, preset]);
 
@@ -654,7 +657,7 @@ export default function TokyoMiniatureMap({
         .setLngLat([tempAiPin.lng, tempAiPin.lat])
         .addTo(map);
     }
-  }, [tempAiPin, setTempAiPin]);
+  }, [tempAiPin, setTempAiPin, mapReady]);
 
   useEffect(() => {
     const sdk = window.maptilersdk;
@@ -693,7 +696,7 @@ export default function TokyoMiniatureMap({
 
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !focusTarget || activeTab !== 'map') return;
+    if (!map || !mapReady || !focusTarget || activeTab !== 'map') return;
     map.flyTo({
       center: [focusTarget.lng, focusTarget.lat],
       zoom: Math.max(map.getZoom?.() ?? 16, 16),
@@ -701,7 +704,7 @@ export default function TokyoMiniatureMap({
       essential: true,
     });
     onFocusHandled();
-  }, [focusTarget, activeTab, onFocusHandled]);
+  }, [focusTarget, activeTab, onFocusHandled, mapReady]);
 
   if (!hasKey) {
     return (
