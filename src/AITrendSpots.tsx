@@ -631,22 +631,40 @@ export default function AITrendSpots({ areaKey, locale, userId, onShowOnMap }: P
       setLoading(true);
       const supabase = getSupabase();
       try {
-        const { data, error } = await supabase
-          .from('ai_trend_weekly')
-          .select(`
-            rank,
-            trend_score,
-            spot:ai_trend_spots(id,name,name_jp,category,category_jp,address,address_jp,website_url,source,trend_score,area_key,city_name,lat,lng)
-          `)
-          .eq('area_key', areaKey)
-          .eq('week_start', weekStart)
-          .order('rank', { ascending: true })
-          .limit(30);
+        const fetchRows = async (targetWeek: string) => {
+          const { data, error } = await supabase
+            .from('ai_trend_weekly')
+            .select(`
+              rank,
+              trend_score,
+              spot:ai_trend_spots(id,name,name_jp,category,category_jp,address,address_jp,website_url,source,trend_score,area_key,city_name,lat,lng)
+            `)
+            .eq('area_key', areaKey)
+            .eq('week_start', targetWeek)
+            .order('rank', { ascending: true })
+            .limit(30);
+          if (error) throw error;
+          return data ?? [];
+        };
 
-        if (error) throw error;
+        let data = await fetchRows(weekStart);
+
+        if (data.length === 0) {
+          const { data: latest } = await supabase
+            .from('ai_trend_weekly')
+            .select('week_start')
+            .eq('area_key', areaKey)
+            .order('week_start', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (latest?.week_start) {
+            data = await fetchRows(latest.week_start);
+          }
+        }
+
         if (!active) return;
 
-        const mapped: WeeklyRow[] = (data ?? []).map((r: any) => ({
+        const mapped: WeeklyRow[] = data.map((r: any) => ({
           rank: r.rank,
           trend_score: r.trend_score ?? 0,
           spot: Array.isArray(r.spot) ? r.spot[0] ?? null : r.spot ?? null,
