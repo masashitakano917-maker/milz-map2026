@@ -657,6 +657,27 @@ function AdminUsersPanel({ locale, currentUserId }: { locale: 'jp' | 'en'; curre
     }
   };
 
+  const handleDelete = async (userId: string, email: string | null) => {
+    const client = getSupabase();
+    if (!client) return;
+    const confirmMsg =
+      locale === 'jp'
+        ? `${email ?? 'このユーザー'} を完全に削除します。よろしいですか？\nこの操作は取り消せません。`
+        : `Permanently delete ${email ?? 'this user'}?\nThis cannot be undone.`;
+    if (!window.confirm(confirmMsg)) return;
+    setRowBusyId(userId);
+    setError(null);
+    setInfo(null);
+    const { error } = await client.rpc('milz_admin_delete_user', { target_user_id: userId });
+    setRowBusyId(null);
+    if (error) {
+      setError(error.message);
+    } else {
+      setInfo(locale === 'jp' ? 'ユーザーを削除しました' : 'User deleted');
+      setRefreshTick((n) => n + 1);
+    }
+  };
+
   const handleDemote = async (userId: string, email: string | null) => {
     const client = getSupabase();
     if (!client) return;
@@ -786,49 +807,68 @@ function AdminUsersPanel({ locale, currentUserId }: { locale: 'jp' | 'en'; curre
                           {isAdmin ? 'Admin' : 'Member'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        {isAdmin ? (
-                          <button
-                            type="button"
-                            disabled={isSelf || rowBusyId === u.id}
-                            onClick={() => handleDemote(u.id, u.email)}
-                            className="rounded-full border border-stone-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-stone-700 transition-all hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-                            title={isSelf ? (locale === 'jp' ? '自分自身は解除できません' : 'You cannot demote yourself') : undefined}
-                          >
-                            {rowBusyId === u.id
-                              ? locale === 'jp' ? '処理中' : 'Working'
-                              : locale === 'jp' ? '権限解除' : 'Revoke'}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={rowBusyId === u.id}
-                            onClick={async () => {
-                              if (!u.email) return;
-                              setRowBusyId(u.id);
-                              setError(null);
-                              setInfo(null);
-                              const client = getSupabase();
-                              if (!client) {
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              disabled={isSelf || rowBusyId === u.id}
+                              onClick={() => handleDemote(u.id, u.email)}
+                              className="rounded-full border border-stone-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-stone-700 transition-all hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+                              title={isSelf ? (locale === 'jp' ? '自分自身は解除できません' : 'You cannot demote yourself') : undefined}
+                            >
+                              {rowBusyId === u.id
+                                ? locale === 'jp' ? '処理中' : 'Working'
+                                : locale === 'jp' ? '権限解除' : 'Revoke'}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={rowBusyId === u.id}
+                              onClick={async () => {
+                                if (!u.email) return;
+                                setRowBusyId(u.id);
+                                setError(null);
+                                setInfo(null);
+                                const client = getSupabase();
+                                if (!client) {
+                                  setRowBusyId(null);
+                                  return;
+                                }
+                                const { error } = await client.rpc('milz_admin_promote_user', { target_email: u.email });
                                 setRowBusyId(null);
-                                return;
-                              }
-                              const { error } = await client.rpc('milz_admin_promote_user', { target_email: u.email });
-                              setRowBusyId(null);
-                              if (error) {
-                                setError(error.message);
-                              } else {
-                                setInfo(locale === 'jp' ? `${u.email} を管理者に昇格しました` : `Promoted ${u.email}`);
-                                setRefreshTick((n) => n + 1);
-                              }
-                            }}
-                            className="rounded-full bg-black px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                                if (error) {
+                                  setError(error.message);
+                                } else {
+                                  setInfo(locale === 'jp' ? `${u.email} を管理者に昇格しました` : `Promoted ${u.email}`);
+                                  setRefreshTick((n) => n + 1);
+                                }
+                              }}
+                              className="rounded-full bg-black px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {rowBusyId === u.id
+                                ? locale === 'jp' ? '処理中' : 'Working'
+                                : locale === 'jp' ? '管理者に昇格' : 'Make admin'}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={isSelf || isAdmin || rowBusyId === u.id}
+                            onClick={() => handleDelete(u.id, u.email)}
+                            className="rounded-full border border-rose-200 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-rose-600 transition-all hover:border-rose-500 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+                            title={
+                              isSelf
+                                ? locale === 'jp' ? '自分自身は削除できません' : 'You cannot delete yourself'
+                                : isAdmin
+                                ? locale === 'jp' ? '管理者はまず権限解除してください' : 'Demote admin before deleting'
+                                : undefined
+                            }
                           >
                             {rowBusyId === u.id
                               ? locale === 'jp' ? '処理中' : 'Working'
-                              : locale === 'jp' ? '管理者に昇格' : 'Make admin'}
+                              : locale === 'jp' ? '削除' : 'Delete'}
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );
