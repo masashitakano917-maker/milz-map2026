@@ -594,6 +594,254 @@ type EditorSuggestionRow = {
   profile?: { display_name: string | null; email: string | null } | null;
 };
 
+type AdminUserRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  role: string | null;
+  created_at: string;
+};
+
+function AdminUsersPanel({ locale, currentUserId }: { locale: 'jp' | 'en'; currentUserId: string | null }) {
+  const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [promoteEmail, setPromoteEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const client = getSupabase();
+    if (!client) {
+      setError('Supabase not configured');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    (async () => {
+      const { data, error } = await client.rpc('milz_admin_list_users', { search: search.trim() || null });
+      if (cancelled) return;
+      if (error) {
+        setError(error.message);
+        setUsers([]);
+      } else {
+        setUsers((data as AdminUserRow[]) ?? []);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, refreshTick]);
+
+  const handlePromote = async () => {
+    const email = promoteEmail.trim();
+    if (!email) return;
+    const client = getSupabase();
+    if (!client) return;
+    setSubmitting(true);
+    setError(null);
+    setInfo(null);
+    const { error } = await client.rpc('milz_admin_promote_user', { target_email: email });
+    setSubmitting(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setInfo(locale === 'jp' ? `${email} を管理者に昇格しました` : `Promoted ${email} to admin`);
+      setPromoteEmail('');
+      setRefreshTick((n) => n + 1);
+    }
+  };
+
+  const handleDemote = async (userId: string, email: string | null) => {
+    const client = getSupabase();
+    if (!client) return;
+    const confirmMsg =
+      locale === 'jp'
+        ? `${email ?? 'このユーザー'} の管理者権限を解除しますか？`
+        : `Revoke admin role for ${email ?? 'this user'}?`;
+    if (!window.confirm(confirmMsg)) return;
+    setRowBusyId(userId);
+    setError(null);
+    setInfo(null);
+    const { error } = await client.rpc('milz_admin_demote_user', { target_user_id: userId });
+    setRowBusyId(null);
+    if (error) {
+      setError(error.message);
+    } else {
+      setInfo(locale === 'jp' ? '管理者権限を解除しました' : 'Admin role revoked');
+      setRefreshTick((n) => n + 1);
+    }
+  };
+
+  return (
+    <section className="bg-white border border-stone-300/80 rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.06)] p-5 md:p-8 xl:p-10 space-y-6">
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-[0.32em] text-stone-400">ADMIN · USERS</div>
+        <h3 className="mt-2 text-2xl md:text-3xl font-black tracking-tight text-black">
+          {locale === 'jp' ? '管理者ユーザー管理' : 'Admin user management'}
+        </h3>
+        <p className="mt-1 text-sm text-stone-500">
+          {locale === 'jp'
+            ? 'メールアドレスを指定して他のユーザーを管理者に昇格できます。'
+            : 'Promote other registered users to admin by their email address.'}
+        </p>
+      </div>
+
+      <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50 p-4 md:p-5 space-y-3">
+        <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500">
+          {locale === 'jp' ? '新しい管理者を追加' : 'Add a new admin'}
+        </div>
+        <div className="flex flex-col gap-2 md:flex-row">
+          <input
+            type="email"
+            value={promoteEmail}
+            onChange={(e) => setPromoteEmail(e.target.value)}
+            placeholder={locale === 'jp' ? 'user@example.com' : 'user@example.com'}
+            className="flex-1 rounded-full border border-stone-300 bg-white px-5 py-3 text-sm text-black placeholder:text-stone-400 focus:border-black focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={handlePromote}
+            disabled={submitting || !promoteEmail.trim()}
+            className="rounded-full bg-black px-6 py-3 text-[11px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {submitting
+              ? locale === 'jp' ? '処理中…' : 'Working…'
+              : locale === 'jp' ? '管理者に昇格' : 'Promote to admin'}
+          </button>
+        </div>
+        <p className="text-[11px] text-stone-500">
+          {locale === 'jp'
+            ? '※ 対象のメールアドレスは既に MILZ にサインアップ済みである必要があります。'
+            : 'Note: the target email must already be registered on MILZ.'}
+        </p>
+      </div>
+
+      {error && (
+        <div className="rounded-[1.2rem] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
+      )}
+      {info && (
+        <div className="rounded-[1.2rem] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {info}
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-500">
+            {locale === 'jp' ? 'ユーザー一覧' : 'Users'}
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={locale === 'jp' ? 'メール・名前で検索' : 'Search by email or name'}
+            className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-black placeholder:text-stone-400 focus:border-black focus:outline-none md:w-72"
+          />
+        </div>
+
+        <div className="overflow-hidden rounded-[1.5rem] border border-stone-200">
+          <table className="w-full text-sm">
+            <thead className="bg-stone-50 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500">
+              <tr>
+                <th className="px-4 py-3 text-left">{locale === 'jp' ? 'メール' : 'Email'}</th>
+                <th className="px-4 py-3 text-left">{locale === 'jp' ? '表示名' : 'Name'}</th>
+                <th className="px-4 py-3 text-left">{locale === 'jp' ? '権限' : 'Role'}</th>
+                <th className="px-4 py-3 text-right">{locale === 'jp' ? '操作' : 'Action'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-stone-500">
+                    {locale === 'jp' ? '読み込み中…' : 'Loading…'}
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-stone-500">
+                    {locale === 'jp' ? 'ユーザーが見つかりません' : 'No users found'}
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => {
+                  const isAdmin = u.role === 'admin';
+                  const isSelf = u.id === currentUserId;
+                  return (
+                    <tr key={u.id} className="border-t border-stone-100">
+                      <td className="px-4 py-3 text-black">{u.email || '—'}</td>
+                      <td className="px-4 py-3 text-stone-600">{u.display_name || '—'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em]',
+                            isAdmin ? 'bg-black text-white' : 'bg-stone-100 text-stone-600'
+                          )}
+                        >
+                          {isAdmin ? 'Admin' : 'Member'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            disabled={isSelf || rowBusyId === u.id}
+                            onClick={() => handleDemote(u.id, u.email)}
+                            className="rounded-full border border-stone-300 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-stone-700 transition-all hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+                            title={isSelf ? (locale === 'jp' ? '自分自身は解除できません' : 'You cannot demote yourself') : undefined}
+                          >
+                            {rowBusyId === u.id
+                              ? locale === 'jp' ? '処理中' : 'Working'
+                              : locale === 'jp' ? '権限解除' : 'Revoke'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={rowBusyId === u.id}
+                            onClick={async () => {
+                              if (!u.email) return;
+                              setRowBusyId(u.id);
+                              setError(null);
+                              setInfo(null);
+                              const client = getSupabase();
+                              if (!client) {
+                                setRowBusyId(null);
+                                return;
+                              }
+                              const { error } = await client.rpc('milz_admin_promote_user', { target_email: u.email });
+                              setRowBusyId(null);
+                              if (error) {
+                                setError(error.message);
+                              } else {
+                                setInfo(locale === 'jp' ? `${u.email} を管理者に昇格しました` : `Promoted ${u.email}`);
+                                setRefreshTick((n) => n + 1);
+                              }
+                            }}
+                            className="rounded-full bg-black px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white transition-all hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {rowBusyId === u.id
+                              ? locale === 'jp' ? '処理中' : 'Working'
+                              : locale === 'jp' ? '管理者に昇格' : 'Make admin'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function AdminEditorSuggestionsPanel({
   locale,
   onShowOnMap,
@@ -7701,6 +7949,10 @@ Return ONLY valid JSON matching the schema.`;
                 </div>
 
                 {role === 'admin' && <AdminStatsPanel locale={locale} />}
+
+                {role === 'admin' && (
+                  <AdminUsersPanel locale={locale} currentUserId={user?.id ?? null} />
+                )}
 
                 {role === 'admin' && (
                   <AdminEditorSuggestionsPanel
