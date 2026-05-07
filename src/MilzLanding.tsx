@@ -444,22 +444,24 @@ export default function MilzLanding({
                     </div>
                   </div>
 
-                  <div className="flex border border-black rounded-full overflow-hidden text-[11px] font-bold tracking-[0.18em] uppercase">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedAuthRole('user')}
-                      className={`flex-1 py-3 ${selectedAuthRole === 'user' ? 'bg-black text-white' : 'bg-white text-black'}`}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2"><UserIcon size={14} /> User</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedAuthRole('admin')}
-                      className={`flex-1 py-3 ${selectedAuthRole === 'admin' ? 'bg-black text-white' : 'bg-white text-black'}`}
-                    >
-                      <span className="inline-flex items-center justify-center gap-2"><ShieldCheck size={14} /> Admin</span>
-                    </button>
-                  </div>
+                  {authMode === 'signin' && (
+                    <div className="flex border border-black rounded-full overflow-hidden text-[11px] font-bold tracking-[0.18em] uppercase">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAuthRole('user')}
+                        className={`flex-1 py-3 ${selectedAuthRole === 'user' ? 'bg-black text-white' : 'bg-white text-black'}`}
+                      >
+                        <span className="inline-flex items-center justify-center gap-2"><UserIcon size={14} /> User</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAuthRole('admin')}
+                        className={`flex-1 py-3 ${selectedAuthRole === 'admin' ? 'bg-black text-white' : 'bg-white text-black'}`}
+                      >
+                        <span className="inline-flex items-center justify-center gap-2"><ShieldCheck size={14} /> Admin</span>
+                      </button>
+                    </div>
+                  )}
 
                   <form onSubmit={handleEmailAuth} className="space-y-6">
                     <div>

@@ -4045,7 +4045,7 @@ export default function App() {
       const client = getSupabase();
       if (!client) return;
       if (authMode === 'signup') {
-        setPendingRole(selectedAuthRole);
+        setPendingRole('user');
         setAuthEmailSent(false);
         const { error } = await client.auth.signUp({
           email,
@@ -4054,7 +4054,7 @@ export default function App() {
             emailRedirectTo: window.location.origin,
             data: {
               language: locale,
-              requested_role: selectedAuthRole,
+              requested_role: 'user',
             },
           },
         });
