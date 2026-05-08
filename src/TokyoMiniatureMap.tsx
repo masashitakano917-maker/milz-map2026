@@ -46,6 +46,7 @@ interface AiFavoritePinLike {
   lat: number;
   lng: number;
   name: string;
+  category?: string;
 }
 
 interface TokyoMiniatureMapProps {
@@ -65,6 +66,9 @@ interface TokyoMiniatureMapProps {
   setMapBounds: (bounds: L.LatLngBounds | null) => void;
   mapRef: MutableRefObject<MapNavigator | null>;
   onSelectPlace: (place: any) => void;
+  onSelectAiFavorite?: (key: string) => void;
+  onSelectAiTrend?: (key: string) => void;
+  viewDetailLabel?: string;
   focusTarget: { lat: number; lng: number } | null;
   onFocusHandled: () => void;
   stationFocus?: { lat: number; lng: number; name: string; name_jp?: string | null; lines?: string[] | null } | null;
@@ -385,6 +389,9 @@ export default function TokyoMiniatureMap({
   setMapBounds,
   mapRef,
   onSelectPlace,
+  onSelectAiFavorite,
+  onSelectAiTrend,
+  viewDetailLabel = 'VIEW DETAIL',
   focusTarget,
   onFocusHandled,
   stationFocus = null,
@@ -611,14 +618,52 @@ export default function TokyoMiniatureMap({
     aiFavoriteMarkerRefs.current.forEach((marker) => marker.remove?.());
     aiFavoriteMarkerRefs.current = [];
 
+    const escapeHtmlShort = (value: string) =>
+      value.replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[ch] as string));
+
     aiFavoritePins.forEach((place) => {
       const el = createMarkerNode('aiSaved');
+      el.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        activePopupRef.current?.remove?.();
+
+        const popupEl = document.createElement('div');
+        popupEl.className = 'milz-map-popup';
+        popupEl.innerHTML = `
+          <div class="milz-map-popup__body">
+            <div class="milz-map-popup__category" style="color:#e11d48">AI RECOMMENDATION</div>
+            <div class="milz-map-popup__title">${escapeHtmlShort(place.name || '')}</div>
+            ${place.category ? `<div class="milz-map-popup__category">${escapeHtmlShort(place.category)}</div>` : ''}
+            <button type="button" class="milz-map-popup__cta">${escapeHtmlShort(viewDetailLabel)}</button>
+          </div>
+        `;
+        popupEl.querySelector('.milz-map-popup__cta')?.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          activePopupRef.current?.remove?.();
+          activePopupRef.current = null;
+          onSelectAiFavorite?.(place.key);
+        });
+
+        const popup = new sdk.Popup({ offset: 36, closeButton: true, closeOnClick: true, maxWidth: '260px' })
+          .setLngLat([place.lng, place.lat])
+          .setDOMContent(popupEl)
+          .addTo(map);
+        popup.on?.('close', () => {
+          if (activePopupRef.current === popup) activePopupRef.current = null;
+        });
+        activePopupRef.current = popup;
+      });
+
       const marker = new sdk.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([place.lng, place.lat])
         .addTo(map);
       aiFavoriteMarkerRefs.current.push(marker);
     });
-  }, [aiFavoritePins]);
+  }, [aiFavoritePins, onSelectAiFavorite, viewDetailLabel]);
 
   useEffect(() => {
     const sdk = window.maptilersdk;
@@ -628,16 +673,53 @@ export default function TokyoMiniatureMap({
     aiTrendMarkerRefs.current.forEach((marker) => marker.remove?.());
     aiTrendMarkerRefs.current = [];
 
+    const escapeHtmlShort = (value: string) =>
+      value.replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[ch] as string));
+
     aiTrendPins.forEach((place) => {
       if (typeof place.lat !== 'number' || typeof place.lng !== 'number') return;
       const el = createMarkerNode('aiTrend');
       el.title = place.name;
+      el.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        activePopupRef.current?.remove?.();
+
+        const popupEl = document.createElement('div');
+        popupEl.className = 'milz-map-popup';
+        popupEl.innerHTML = `
+          <div class="milz-map-popup__body">
+            <div class="milz-map-popup__category" style="color:#e11d48">AI TREND</div>
+            <div class="milz-map-popup__title">${escapeHtmlShort(place.name || '')}</div>
+            ${place.category ? `<div class="milz-map-popup__category">${escapeHtmlShort(place.category)}</div>` : ''}
+            <button type="button" class="milz-map-popup__cta">${escapeHtmlShort(viewDetailLabel)}</button>
+          </div>
+        `;
+        popupEl.querySelector('.milz-map-popup__cta')?.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          activePopupRef.current?.remove?.();
+          activePopupRef.current = null;
+          onSelectAiTrend?.(place.key);
+        });
+
+        const popup = new sdk.Popup({ offset: 36, closeButton: true, closeOnClick: true, maxWidth: '260px' })
+          .setLngLat([place.lng, place.lat])
+          .setDOMContent(popupEl)
+          .addTo(map);
+        popup.on?.('close', () => {
+          if (activePopupRef.current === popup) activePopupRef.current = null;
+        });
+        activePopupRef.current = popup;
+      });
       const marker = new sdk.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([place.lng, place.lat])
         .addTo(map);
       aiTrendMarkerRefs.current.push(marker);
     });
-  }, [aiTrendPins]);
+  }, [aiTrendPins, onSelectAiTrend, viewDetailLabel]);
 
   useEffect(() => {
     const sdk = window.maptilersdk;

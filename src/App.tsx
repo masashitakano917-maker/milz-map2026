@@ -3065,6 +3065,8 @@ function AppMain() {
   const [aiLeaderboard, setAiLeaderboard] = useState<AiRecommendationMetric[]>([]);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [selectedPlaceForDetail, setSelectedPlaceForDetail] = useState<Place | null>(null);
+  const [selectedAiFavoriteDetail, setSelectedAiFavoriteDetail] = useState<AiFavoriteItem | null>(null);
+  const [selectedAiTrendDetail, setSelectedAiTrendDetail] = useState<AiTrendFavoriteRow | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const openPlaceDetail = React.useCallback((target: Place | string | null | undefined) => {
@@ -6457,10 +6459,19 @@ Return ONLY valid JSON matching the schema.`;
                   styleVariant={mapStyle as any}
                   places={filteredPlaces}
                   tempAiPin={tempAiPin}
-                  aiFavoritePins={aiRecommendationFavFilter ? aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name })) : []}
+                  aiFavoritePins={aiRecommendationFavFilter ? aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name, category: getAiFavoriteDisplay(item, locale).category })) : []}
                   aiTrendPins={aiTrendFavFilter ? aiTrendFavorites
                     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
-                    .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name })) : []}
+                    .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name, category: r.category })) : []}
+                  onSelectAiFavorite={(key) => {
+                    const match = aiFavorites.find((item) => item.key === key);
+                    if (match) setSelectedAiFavoriteDetail(match);
+                  }}
+                  onSelectAiTrend={(key) => {
+                    const match = aiTrendFavorites.find((r) => r.id === key);
+                    if (match) setSelectedAiTrendDetail(match);
+                  }}
+                  viewDetailLabel={locale === 'jp' ? '詳細を見る' : 'VIEW DETAIL'}
                   newPlacePos={newPlacePos}
                   role={role}
                   activeTab={activeTab}
@@ -6568,18 +6579,20 @@ Return ONLY valid JSON matching the schema.`;
                       <Popup>
                         {(() => {
                           const d = getAiFavoriteDisplay(item, locale);
-                          const desc = (d.details || d.reason || '').trim();
-                          const shortDesc = desc.split(/(?<=[。．.!?！？])\s*/).slice(0, 2).join(' ').trim();
                           return (
-                            <div className="p-3 min-w-[220px] max-w-[260px]">
+                            <div className="p-3 min-w-[200px] max-w-[240px]">
                               <div className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">AI Recommendation</div>
-                              <div className="font-black text-black tracking-tight text-sm leading-snug mb-1.5">{d.name}</div>
+                              <div className="font-black text-black tracking-tight text-sm leading-snug mb-1">{d.name}</div>
                               {d.category && (
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">{d.category}</div>
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-3">{d.category}</div>
                               )}
-                              {shortDesc && (
-                                <p className="text-[11px] text-stone-600 leading-relaxed m-0">{shortDesc}</p>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedAiFavoriteDetail(item)}
+                                className="w-full py-2.5 bg-black text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-lg hover:bg-stone-800 transition-all active:scale-[0.98]"
+                              >
+                                {locale === 'jp' ? '詳細を見る' : 'View Detail'}
+                              </button>
                             </div>
                           );
                         })()}
@@ -6600,24 +6613,22 @@ Return ONLY valid JSON matching the schema.`;
                         })}
                       >
                         <Popup>
-                          {(() => {
-                            const desc = (r.description || '').trim();
-                            const shortDesc = desc.split(/(?<=[。．.!?！？])\s*/).slice(0, 2).join(' ').trim();
-                            return (
-                              <div className="p-3 min-w-[220px] max-w-[260px]">
-                                <div className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">AI Trend</div>
-                                <div className="font-black text-black tracking-tight text-sm leading-snug mb-1.5">{r.name}</div>
-                                {(r.category || r.city_name) && (
-                                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
-                                    {[r.category, r.city_name].filter(Boolean).join(' • ')}
-                                  </div>
-                                )}
-                                {shortDesc && (
-                                  <p className="text-[11px] text-stone-600 leading-relaxed m-0">{shortDesc}</p>
-                                )}
+                          <div className="p-3 min-w-[200px] max-w-[240px]">
+                            <div className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">AI Trend</div>
+                            <div className="font-black text-black tracking-tight text-sm leading-snug mb-1">{r.name}</div>
+                            {(r.category || r.city_name) && (
+                              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-3">
+                                {[r.category, r.city_name].filter(Boolean).join(' • ')}
                               </div>
-                            );
-                          })()}
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAiTrendDetail(r)}
+                              className="w-full py-2.5 bg-black text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-lg hover:bg-stone-800 transition-all active:scale-[0.98]"
+                            >
+                              {locale === 'jp' ? '詳細を見る' : 'View Detail'}
+                            </button>
+                          </div>
                         </Popup>
                       </Marker>
                     ) : null
@@ -10094,6 +10105,130 @@ Return ONLY valid JSON matching the schema.`;
                     </div>
                   </div>
                 </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* AI Favorite / Trend saved-card detail modal */}
+        <AnimatePresence>
+          {(selectedAiFavoriteDetail || selectedAiTrendDetail) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[3500] bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
+              onClick={() => { setSelectedAiFavoriteDetail(null); setSelectedAiTrendDetail(null); }}
+            >
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 30, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-md bg-white rounded-[1.75rem] border border-stone-100 shadow-2xl p-6 md:p-7"
+              >
+                <button
+                  type="button"
+                  onClick={() => { setSelectedAiFavoriteDetail(null); setSelectedAiTrendDetail(null); }}
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:bg-stone-800 transition-all active:scale-95 shadow-lg z-10"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {selectedAiFavoriteDetail && (() => {
+                  const item = selectedAiFavoriteDetail;
+                  const localized = getAiFavoriteDisplay(item, locale);
+                  return (
+                    <div className="space-y-5">
+                      <div className="flex items-start justify-between gap-4 pr-8">
+                        <div className="space-y-2 min-w-0">
+                          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em]">AI RECOMMENDATION</p>
+                          <p className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em]">{localized.category}</p>
+                          <h3 className="text-xl font-black text-black leading-tight">{localized.name}</h3>
+                        </div>
+                      </div>
+                      <p className="text-sm text-stone-500 leading-relaxed font-medium">{localized.details || localized.reason}</p>
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-[10px] font-black text-stone-300 uppercase tracking-widest">{t('savedAt')} {new Date(item.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-3 pt-1">
+                        <button
+                          onClick={() => { handleAiViewOnMap(item); setSelectedAiFavoriteDetail(null); }}
+                          className="flex-1 px-4 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 hover:bg-stone-800 transition-all"
+                        >
+                          <MapPin className="w-3 h-3" />
+                          {t('viewOnMap')}
+                        </button>
+                        <button
+                          onClick={() => handleSaveAiRecommendation(item)}
+                          className="px-4 py-3 border border-stone-200 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-rose-200 transition-all"
+                          title={locale === 'jp' ? 'お気に入りから外す' : 'Remove favorite'}
+                        >
+                          <Heart className="w-4 h-4 fill-current" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {selectedAiTrendDetail && (() => {
+                  const fav = selectedAiTrendDetail;
+                  return (
+                    <div className="space-y-5">
+                      <div className="flex items-start justify-between gap-4 pr-8">
+                        <div className="space-y-1.5 min-w-0">
+                          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em]">
+                            AI TREND / {fav.city_name}
+                          </p>
+                          <h3 className="text-xl font-black text-black leading-tight">{fav.name}</h3>
+                          {fav.category && (
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{fav.category}</p>
+                          )}
+                        </div>
+                      </div>
+                      {fav.address && (
+                        <p className="text-xs text-stone-500 font-medium">{fav.address}</p>
+                      )}
+                      {fav.description && (
+                        <p className="text-sm text-stone-600 leading-relaxed font-medium">{fav.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">
+                          {locale === 'jp' ? 'スコア' : 'Score'}
+                        </span>
+                        <span className="text-xs font-black text-black tabular-nums">
+                          {Number(fav.trend_score).toFixed(1)}
+                        </span>
+                        <span className="ml-auto text-[10px] font-black text-stone-300 uppercase tracking-widest">
+                          {new Date(fav.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                        {fav.website_url && (
+                          <a
+                            href={fav.website_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:text-black py-3 rounded-full border border-stone-200 hover:border-black transition-all"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Link
+                          </a>
+                        )}
+                        {typeof fav.lat === 'number' && typeof fav.lng === 'number' && (
+                          <button
+                            type="button"
+                            onClick={() => { handleAiViewOnMap({ lat: fav.lat as number, lng: fav.lng as number, name: fav.name } as any); setSelectedAiTrendDetail(null); }}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] py-3 rounded-full bg-black text-white hover:bg-stone-800 transition-all"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            {t('viewOnMap')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
               </motion.div>
             </motion.div>
           )}
