@@ -23,8 +23,8 @@ Deno.serve(async (req: Request) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const GAS_WEBHOOK_URL = Deno.env.get("GAS_WEBHOOK_URL") || "";
-    const GAS_SECRET = Deno.env.get("GAS_SECRET") || "";
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw5UKkeQsmlNpkeaioaNdIF4_UtOiFf4x69qI2FUCCUt9gd7-z6ckkbWWrwcWxqTZnq/exec";
+    const GAS_SECRET = "Mz8vX2qRkT9wY4pB3nH7jL1sD6fGcV5aQeU0oI8yK2mN4bC6xZ3rW9tE1hP5uJ7d";
 
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: `Bearer ${accessToken}` } },
