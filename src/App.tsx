@@ -4296,9 +4296,9 @@ function AppMain() {
   const [modalAddress, setModalAddress] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const geocodeWithNominatim = async (query: string): Promise<{ lat: number; lng: number } | null> => {
+  const geocodeWithNominatim = async (query: string): Promise<{ lat: number; lng: number; address?: any } | null> => {
     try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&accept-language=ja&q=${encodeURIComponent(query)}`;
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&accept-language=ja&q=${encodeURIComponent(query)}`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) return null;
       const data = await res.json();
@@ -4306,11 +4306,22 @@ function AppMain() {
         const lat = parseFloat(data[0].lat);
         const lon = parseFloat(data[0].lon);
         if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          return { lat, lng: lon };
+          return { lat, lng: lon, address: data[0].address };
         }
       }
     } catch (err) {
       console.warn('Nominatim geocoding failed', err);
+    }
+    return null;
+  };
+
+  const matchCityFromAddressText = (areaKey: string, text: string): string | null => {
+    if (!text) return null;
+    const options = getAreaCityOptions(areaKey);
+    const lower = text.toLowerCase();
+    for (const city of options) {
+      if (city.name_jp && text.includes(city.name_jp)) return city.name;
+      if (city.name && lower.includes(city.name.toLowerCase())) return city.name;
     }
     return null;
   };
@@ -4359,6 +4370,24 @@ function AppMain() {
       if (coords) {
         setNewPlacePos({ lat: coords.lat, lng: coords.lng });
         mapRef.current?.flyTo([coords.lat, coords.lng], 17);
+
+        const detail = (coords as any).address || {};
+        const cityText = [
+          detail.city_district,
+          detail.suburb,
+          detail.city,
+          detail.town,
+          detail.county,
+          detail.municipality,
+          detail.quarter,
+          detail.neighbourhood,
+          raw,
+        ].filter(Boolean).join(' ');
+        const matched = matchCityFromAddressText(placeEditorAreaKey, cityText) || matchCityFromAddressText(placeEditorAreaKey, raw);
+        if (matched) {
+          setPlaceEditorCityName(matched);
+        }
+
         showToast(
           locale === 'jp'
             ? '住所から座標を取得しました。位置がずれている場合は地図上でピンをドラッグして調整してください。'
@@ -8797,7 +8826,13 @@ Return ONLY valid JSON matching the schema.`;
                         <input 
                           type="text"
                           value={modalAddress}
-                          onChange={(e) => setModalAddress(e.target.value)}
+                          onChange={(e) => {
+                            setModalAddress(e.target.value);
+                            const matched = matchCityFromAddressText(placeEditorAreaKey, e.target.value);
+                            if (matched && matched !== placeEditorCityName) {
+                              setPlaceEditorCityName(matched);
+                            }
+                          }}
                           placeholder={addSpotCopy.enterAddressPlaceholder}
                           className="flex-1 px-6 py-4 bg-stone-50 border border-stone-200 outline-none focus:border-black transition-all font-medium"
                           onKeyDown={(e) => e.key === 'Enter' && handleModalAddressSearch()}
@@ -8901,11 +8936,17 @@ Return ONLY valid JSON matching the schema.`;
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">{addSpotCopy.addressDetail}</label>
-                        <input 
+                        <input
                           name="address"
                           required
                           defaultValue={editingPlace?.address || modalAddress || ''}
                           placeholder={addSpotCopy.addressDetailPlaceholder}
+                          onChange={(e) => {
+                            const matched = matchCityFromAddressText(placeEditorAreaKey, e.target.value);
+                            if (matched && matched !== placeEditorCityName) {
+                              setPlaceEditorCityName(matched);
+                            }
+                          }}
                           className="w-full px-6 py-4 bg-stone-50 border border-stone-200 outline-none focus:border-black transition-all font-medium"
                         />
                         <p className="text-[10px] text-stone-400 leading-relaxed px-1">{addSpotCopy.addressDetailHint}</p>
