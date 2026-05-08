@@ -3433,9 +3433,23 @@ function AppMain() {
         
         if (session?.user) {
           console.log('App: Session found', session.user.email);
+          const sessionEmail = session.user.email || '';
+          if (sessionEmail !== 'masashi@milz.tech') {
+            const { data: prof } = await client
+              .from('profiles')
+              .select('email_verified')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            if (!prof?.email_verified) {
+              console.log('App: Unverified user, signing out');
+              await client.auth.signOut();
+              setUser(null);
+              setRole(null);
+              return;
+            }
+          }
           setUser(session.user);
-          // Immediate role override for admin
-          if (session.user.email === 'masashi@milz.tech') {
+          if (sessionEmail === 'masashi@milz.tech') {
             setRole('admin');
           }
           await fetchProfile(session.user.id, session.user.email);
@@ -3456,13 +3470,32 @@ function AppMain() {
     let subscription: any = null;
     
     if (client) {
-      const { data } = client.auth.onAuthStateChange(async (event, session) => {
+      const { data } = client.auth.onAuthStateChange((event, session) => {
         console.log('App: Auth state change', event, session?.user?.email);
-        if (isMounted) {
+        (async () => {
+          if (!isMounted) return;
           if (session?.user) {
+            const sessionEmail = session.user.email || '';
+            if (sessionEmail !== 'masashi@milz.tech') {
+              try {
+                const { data: prof } = await client
+                  .from('profiles')
+                  .select('email_verified')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+                if (!prof?.email_verified) {
+                  await client.auth.signOut();
+                  setUser(null);
+                  setRole(null);
+                  setLoading(false);
+                  return;
+                }
+              } catch (e) {
+                console.warn('email_verified check failed', e);
+              }
+            }
             setUser(session.user);
-            // Immediate role override for admin
-            if (session.user.email === 'masashi@milz.tech') {
+            if (sessionEmail === 'masashi@milz.tech') {
               setRole('admin');
             }
             await fetchProfile(session.user.id, session.user.email);
@@ -3471,7 +3504,7 @@ function AppMain() {
             setRole(null);
           }
           setLoading(false);
-        }
+        })();
       });
       subscription = data.subscription;
     }
@@ -4186,33 +4219,70 @@ function AppMain() {
         });
         if (error) throw error;
 
+        const accessToken = signUpData?.session?.access_token;
         try {
-          const accessToken = signUpData?.session?.access_token;
-          if (accessToken) {
-            const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
-            await fetch(notifyUrl, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-              },
-              body: JSON.stringify({}),
-            });
+          const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
+          const notifyRes = await fetch(notifyUrl, {
+            method: 'POST',
+            headers: {
+              ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }),
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ email }),
+          });
+          const notifyBody = await notifyRes.json().catch(() => ({}));
+          console.log('signup-notify result', notifyRes.status, notifyBody);
+          if (!notifyRes.ok) {
+            console.warn('signup-notify non-OK', notifyBody);
           }
         } catch (notifyErr) {
           console.warn('signup-notify failed', notifyErr);
         }
 
+        try { await client.auth.signOut(); } catch { /* ignore */ }
+        setUser(null);
+        setRole(null);
+
         setAuthEmailSent(true);
-        showToast(locale === 'jp' ? '確認メールを送信しました。メールをご確認ください。' : 'Check your email for confirmation!', 'info');
+        setPendingRole(null);
+        showToast(locale === 'jp' ? '確認メールを送信しました。メール内のボタンから認証を完了してください。' : 'Check your email and click the verification link to continue.', 'info');
       } else {
         setAuthEmailSent(false);
-        const { error } = await client.auth.signInWithPassword({
+        const { data: signInData, error } = await client.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        const uid = signInData?.user?.id;
+        if (uid) {
+          const { data: prof } = await client
+            .from('profiles')
+            .select('email_verified')
+            .eq('id', uid)
+            .maybeSingle();
+          if (!prof?.email_verified && email !== 'masashi@milz.tech') {
+            await client.auth.signOut();
+            setUser(null);
+            setRole(null);
+            try {
+              const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
+              await fetch(notifyUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                },
+                body: JSON.stringify({ email }),
+              });
+            } catch { /* ignore */ }
+            throw new Error(locale === 'jp'
+              ? 'メール認証が完了していません。認証リンクを再送しました。メールをご確認ください。'
+              : 'Email not verified. A new verification link has been sent to your inbox.');
+          }
+        }
       }
     } catch (error: any) {
       let msg = error.message;
