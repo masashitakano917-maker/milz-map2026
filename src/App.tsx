@@ -4229,7 +4229,7 @@ function AppMain() {
               'Content-Type': 'application/json',
               'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ email, language: locale }),
           });
           const notifyBody = await notifyRes.json().catch(() => ({}));
           console.log('signup-notify result', notifyRes.status, notifyBody);
@@ -4275,7 +4275,7 @@ function AppMain() {
                   'Content-Type': 'application/json',
                   'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, language: locale }),
               });
             } catch { /* ignore */ }
             throw new Error(locale === 'jp'

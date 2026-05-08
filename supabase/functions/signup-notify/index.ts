@@ -26,7 +26,8 @@ Deno.serve(async (req: Request) => {
     const authHeader = req.headers.get("Authorization") || "";
     const accessToken = authHeader.replace("Bearer ", "").trim();
 
-    const bodyIn = await req.json().catch(() => ({}));
+    const bodyIn = await req.json().catch(() => ({} as Record<string, unknown>));
+    const language = (bodyIn?.language === "jp" ? "jp" : "en");
 
     if (accessToken && accessToken !== SUPABASE_ANON_KEY) {
       const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -79,6 +80,7 @@ Deno.serve(async (req: Request) => {
           email,
           user_id: userId,
           verify_url: verifyUrl,
+          language,
           timestamp: new Date().toISOString(),
         }),
       });
