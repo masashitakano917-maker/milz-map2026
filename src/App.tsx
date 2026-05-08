@@ -6493,9 +6493,9 @@ Return ONLY valid JSON matching the schema.`;
                     onFocusHandled={() => setPendingMapFocus(null)}
                   />
                   
-                  {filteredPlaces.map((place) => (
-                    <Marker 
-                      key={place.id} 
+                  {((aiTrendFavFilter || aiRecommendationFavFilter) ? [] : filteredPlaces).map((place) => (
+                    <Marker
+                      key={place.id}
                       position={[place.lat, place.lng]}
                       icon={getCustomIcon(place.category, mapStyle)}
                     >
@@ -6548,7 +6548,7 @@ Return ONLY valid JSON matching the schema.`;
 
 
 
-                  {aiFavorites.map((item) => (
+                  {((aiTrendFavFilter && !aiRecommendationFavFilter) ? [] : aiFavorites).map((item) => (
                     <Marker
                       key={item.key}
                       position={[item.lat, item.lng]}
@@ -6568,7 +6568,7 @@ Return ONLY valid JSON matching the schema.`;
                     </Marker>
                   ))}
 
-                  {aiTrendFavorites.map((r) => (
+                  {((aiRecommendationFavFilter && !aiTrendFavFilter) ? [] : aiTrendFavorites).map((r) => (
                     typeof r.lat === 'number' && typeof r.lng === 'number' ? (
                       <Marker
                         key={`trend-${r.id}`}
