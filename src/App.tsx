@@ -2940,7 +2940,93 @@ const getCustomIcon = (category: string, mapStyle: string) => {
   return icon;
 };
 
+function VerifyEmailPage({ token }: { token: string }) {
+  const [status, setStatus] = useState<'loading' | 'success' | 'already' | 'error'>('loading');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-email?token=${encodeURIComponent(token)}`;
+        const res = await fetch(url, {
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        });
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (res.ok && body?.ok) {
+          setStatus(body.already ? 'already' : 'success');
+        } else {
+          setStatus('error');
+          setMessage(body?.error || `HTTP ${res.status}`);
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        setStatus('error');
+        setMessage(err?.message || 'Network error');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-6">
+      <div className="max-w-md w-full bg-white rounded-3xl border border-stone-200 shadow-sm p-10 text-center">
+        <div className="w-16 h-16 rounded-full bg-black text-white flex items-center justify-center mx-auto mb-6">
+          {status === 'loading' ? <Loader2 className="w-7 h-7 animate-spin" /> : status === 'error' ? <AlertCircle className="w-7 h-7" /> : <CheckCircle2 className="w-7 h-7" />}
+        </div>
+        {status === 'loading' && (
+          <>
+            <h1 className="text-2xl font-semibold text-stone-900 mb-2">認証中...</h1>
+            <p className="text-stone-600 text-sm">Verifying your email</p>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <h1 className="text-2xl font-semibold text-stone-900 mb-2">メール認証が完了しました</h1>
+            <p className="text-stone-600 text-sm mb-6">Your email has been verified.</p>
+            <a href="/" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-black text-white text-sm font-medium hover:bg-stone-800 transition">ホームへ戻る</a>
+          </>
+        )}
+        {status === 'already' && (
+          <>
+            <h1 className="text-2xl font-semibold text-stone-900 mb-2">認証済みです</h1>
+            <p className="text-stone-600 text-sm mb-6">Already verified.</p>
+            <a href="/" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-black text-white text-sm font-medium hover:bg-stone-800 transition">ホームへ戻る</a>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <h1 className="text-2xl font-semibold text-stone-900 mb-2">認証に失敗しました</h1>
+            <p className="text-stone-600 text-sm mb-2">{message}</p>
+            <p className="text-stone-500 text-xs mb-6">リンクが期限切れか、無効です。</p>
+            <a href="/" className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-black text-white text-sm font-medium hover:bg-stone-800 transition">ホームへ戻る</a>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const verifyToken = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const path = window.location.pathname.replace(/\/+$/, '');
+    if (path !== '/verify') return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+  }, []);
+  if (verifyToken) {
+    return <VerifyEmailPage token={verifyToken} />;
+  }
+
+  return <AppMain />;
+}
+
+function AppMain() {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileDisplayName, setProfileDisplayName] = useState('');
@@ -4087,7 +4173,7 @@ export default function App() {
       if (authMode === 'signup') {
         setPendingRole('user');
         setAuthEmailSent(false);
-        const { error } = await client.auth.signUp({
+        const { data: signUpData, error } = await client.auth.signUp({
           email,
           password,
           options: {
@@ -4099,6 +4185,25 @@ export default function App() {
           },
         });
         if (error) throw error;
+
+        try {
+          const accessToken = signUpData?.session?.access_token;
+          if (accessToken) {
+            const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
+            await fetch(notifyUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+              },
+              body: JSON.stringify({}),
+            });
+          }
+        } catch (notifyErr) {
+          console.warn('signup-notify failed', notifyErr);
+        }
+
         setAuthEmailSent(true);
         showToast(locale === 'jp' ? '確認メールを送信しました。メールをご確認ください。' : 'Check your email for confirmation!', 'info');
       } else {
