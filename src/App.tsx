@@ -9180,20 +9180,39 @@ Return ONLY valid JSON matching the schema.`;
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-stone-900/90 backdrop-blur-xl z-[3000] overflow-y-auto no-scrollbar"
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 100, opacity: 0 }}
-                className="min-h-screen bg-[#fcfcfb] text-[#1c1917]"
+                className="min-h-screen bg-white text-[var(--ink)]"
               >
+                {/* Marquee ribbon - matches MILZ landing */}
+                <div className="bg-black text-white overflow-hidden py-2.5 border-b border-black">
+                  <div className="marquee-track text-[11px] tracking-[0.35em] font-semibold">
+                    {Array.from({ length: 3 }).map((_, k) => (
+                      <div key={k} className="flex gap-10 pr-10 whitespace-nowrap">
+                        {[
+                          'ISSUE N°001',
+                          'FINDING THE UNKNOWN',
+                          (selectedPlaceForDetail.area_label || selectedPlaceForDetail.area_key || '').toString().toUpperCase(),
+                          'A CURATED SELECTION',
+                          '知られていないものを、編む',
+                          'MILZ SELECTS',
+                        ].filter(Boolean).map((txt, i) => (
+                          <span key={i}>★ {txt}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 {/* Hero Section */}
-                <div className="relative h-[80vh] w-full bg-stone-900 overflow-hidden">
-                  <img 
-                    src={(isEditingDetail ? editDetailForm.image_url : selectedPlaceForDetail.image_url) || selectedPlaceForDetail.images?.[0] || 'https://picsum.photos/seed/luxury/1920/1080'} 
-                    className="w-full h-full object-cover opacity-60 scale-105"
+                <div className="relative h-[85vh] w-full bg-black overflow-hidden border-b border-black">
+                  <img
+                    src={(isEditingDetail ? editDetailForm.image_url : selectedPlaceForDetail.image_url) || selectedPlaceForDetail.images?.[0] || 'https://picsum.photos/seed/luxury/1920/1080'}
+                    className="w-full h-full object-cover opacity-70 scale-105"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
                   
                   {/* Close Button */}
                   <button 
@@ -9276,27 +9295,27 @@ Return ONLY valid JSON matching the schema.`;
                     )}
                   </div>
 
-                  {/* Hero Content - Centered & Bold */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 space-y-6">
+                  {/* Hero Content - Editorial magazine style */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-end text-center p-8 pb-20 space-y-6">
                     {isEditingDetail ? (
-                      <div className="space-y-4 w-full max-w-2xl z-10">
-                        <input 
+                      <div className="space-y-4 w-full max-w-3xl z-10">
+                        <input
                           type="text"
                           value={editDetailForm.category || ''}
                           onChange={(e) => setEditDetailForm({ ...editDetailForm, category: e.target.value })}
-                          className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase tracking-[0.5em] text-center w-full py-2 outline-none focus:border-white/40"
+                          className="bg-white/5 backdrop-blur-md border border-white/30 text-white text-[11px] font-semibold uppercase tracking-[0.35em] text-center w-full py-2 outline-none focus:border-white/70"
                           placeholder="CATEGORY"
                         />
-                        <input 
+                        <input
                           type="text"
                           value={editDetailForm.name || ''}
                           onChange={(e) => setEditDetailForm({ ...editDetailForm, name: e.target.value })}
-                          className="bg-transparent text-6xl md:text-8xl font-serif font-light text-white leading-none tracking-tight text-center w-full outline-none border-b border-white/20 focus:border-white/60"
+                          className="bg-transparent font-display text-[88px] md:text-[160px] text-white leading-[0.88] text-center w-full outline-none border-b border-white/20 focus:border-white/60 uppercase"
                           placeholder="SPOT NAME"
                         />
                         <div className="flex justify-center pt-4">
-                          <DropZone 
-                            label="Hero Background" 
+                          <DropZone
+                            label="Hero Background"
                             onFilesDrop={(files) => handleFilesDrop(files, 'image_url')}
                             isLoading={uploading}
                             className="bg-white/5 border-white/10 text-white w-64 min-h-[100px]"
@@ -9305,20 +9324,24 @@ Return ONLY valid JSON matching the schema.`;
                       </div>
                     ) : (
                       <>
-                        <div className="text-[10px] font-black text-white uppercase tracking-[0.5em] opacity-80">
-                          {selectedPlaceForDetail.category} • {selectedPlaceForDetail.address?.split(',')[0]}
+                        <div className="text-[11px] font-semibold text-white uppercase tracking-[0.35em]">
+                          ★ {selectedPlaceForDetail.category} {selectedPlaceForDetail.address ? `/ ${selectedPlaceForDetail.address.split(',')[0]}` : ''} ★
                         </div>
-                        <h1 className="text-6xl md:text-8xl font-serif font-light text-white leading-none tracking-tight">
+                        <h1 className="font-display text-[72px] md:text-[160px] text-white leading-[0.88] tracking-tight uppercase max-w-6xl">
                           {selectedPlaceForDetail.name}
                         </h1>
+                        <div className="flex items-center gap-3 pt-2">
+                          <span className="h-[1px] w-16 bg-white/60" />
+                          <span className="font-cond text-white text-[13px] uppercase tracking-[0.2em]">Issue N°001 — Finding the Unknown</span>
+                          <span className="h-[1px] w-16 bg-white/60" />
+                        </div>
                       </>
                     )}
-                    <div className="w-24 h-[1px] bg-white/50" />
                   </div>
                 </div>
 
                 {/* Content Grid */}
-                <div className="max-w-7xl mx-auto px-8 py-20 grid grid-cols-1 lg:grid-cols-12 gap-20">
+                <div className="max-w-[1500px] mx-auto px-6 md:px-8 py-20 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20">
                   
                   {/* Left Column: Story & Experience */}
                   <div className="lg:col-span-8 space-y-32">
@@ -9326,16 +9349,16 @@ Return ONLY valid JSON matching the schema.`;
                     {/* Milz Experience Section */}
                     <section className="space-y-12">
                       <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">01</span>
+                        <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 01</span>
                         {isEditingDetail ? (
                           <input 
                             type="text"
                             value={editDetailForm.milz_experience_heading || 'Milz Experience'}
                             onChange={(e) => setEditDetailForm({ ...editDetailForm, milz_experience_heading: e.target.value })}
-                            className="bg-transparent text-4xl font-serif font-light tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
+                            className="bg-transparent font-display text-5xl md:text-6xl uppercase tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
                           />
                         ) : (
-                          <h2 className="text-4xl font-serif font-light tracking-tight text-black">
+                          <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
                             {selectedPlaceForDetail.milz_experience_heading || 'Milz Experience'}
                           </h2>
                         )}
@@ -9377,7 +9400,7 @@ Return ONLY valid JSON matching the schema.`;
                               placeholder="Describe the MILZ experience..."
                             />
                           ) : (
-                            <p className="text-2xl font-serif text-stone-800 leading-[1.6] italic">
+                            <p className="text-xl md:text-2xl font-medium text-stone-800 leading-[1.7]">
                               {selectedPlaceForDetail.milz_experience || selectedPlaceForDetail.detailed_description || selectedPlaceForDetail.description}
                             </p>
                           )}
@@ -9389,16 +9412,16 @@ Return ONLY valid JSON matching the schema.`;
                     <section className="space-y-12">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">02</span>
+                          <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 02</span>
                           {isEditingDetail ? (
                             <input 
                               type="text"
                               value={editDetailForm.photos_heading || 'Photos'}
                               onChange={(e) => setEditDetailForm({ ...editDetailForm, photos_heading: e.target.value })}
-                              className="bg-transparent text-4xl font-serif font-light tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
+                              className="bg-transparent font-display text-5xl md:text-6xl uppercase tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
                             />
                           ) : (
-                            <h2 className="text-4xl font-serif font-light tracking-tight text-black">
+                            <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
                               {selectedPlaceForDetail.photos_heading || 'Photos'}
                             </h2>
                           )}
@@ -9451,16 +9474,16 @@ Return ONLY valid JSON matching the schema.`;
                     {(isEditingDetail || (selectedPlaceForDetail.videos && selectedPlaceForDetail.videos.length > 0)) && (
                       <section className="space-y-12">
                         <div className="flex items-center gap-4">
-                          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">03</span>
+                          <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 03</span>
                           {isEditingDetail ? (
                             <input 
                               type="text"
                               value={editDetailForm.shorts_heading || 'Shorts'}
                               onChange={(e) => setEditDetailForm({ ...editDetailForm, shorts_heading: e.target.value })}
-                              className="bg-transparent text-4xl font-serif font-light tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
+                              className="bg-transparent font-display text-5xl md:text-6xl uppercase tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
                             />
                           ) : (
-                            <h2 className="text-4xl font-serif font-light tracking-tight text-black">
+                            <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
                               {selectedPlaceForDetail.shorts_heading || 'Shorts'}
                             </h2>
                           )}
@@ -9527,16 +9550,16 @@ Return ONLY valid JSON matching the schema.`;
                       <section className="space-y-12">
                         <div className="flex items-center justify-between gap-6 flex-wrap">
                           <div className="flex items-center gap-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">05</span>
+                            <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 05</span>
                             {isEditingDetail ? (
                               <input
                                 type="text"
                                 value={editDetailForm.from_spot_heading || fromSpotHeadingDefault}
                                 onChange={(e) => setEditDetailForm({ ...editDetailForm, from_spot_heading: e.target.value })}
-                                className="bg-transparent text-4xl font-serif font-light tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
+                                className="bg-transparent font-display text-5xl md:text-6xl uppercase tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
                               />
                             ) : (
-                              <h2 className="text-4xl font-serif font-light tracking-tight text-black">
+                              <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
                                 {selectedPlaceForDetail.from_spot_heading || fromSpotHeadingDefault}
                               </h2>
                             )}
@@ -9652,7 +9675,7 @@ Return ONLY valid JSON matching the schema.`;
                                     <>
                                       <div className="space-y-3">
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">{item.subtitle || (locale === 'jp' ? 'FROM THE SPOT' : 'FROM THE SPOT')}</p>
-                                        <h3 className="text-3xl font-serif font-light tracking-tight text-black">{item.title}</h3>
+                                        <h3 className="font-display text-3xl md:text-4xl uppercase tracking-tight text-black leading-[0.95]">{item.title}</h3>
                                       </div>
                                       <p className="text-base leading-relaxed text-stone-600 whitespace-pre-line">{item.description}</p>
                                     </>
@@ -9686,16 +9709,16 @@ Return ONLY valid JSON matching the schema.`;
                     {/* Menu Section */}
                     <section className="space-y-12">
                       <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-stone-400">04</span>
+                        <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 04</span>
                         {isEditingDetail ? (
                           <input 
                             type="text"
                             value={editDetailForm.menu_heading || 'Menu & Offerings'}
                             onChange={(e) => setEditDetailForm({ ...editDetailForm, menu_heading: e.target.value })}
-                            className="bg-transparent text-4xl font-serif font-light tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
+                            className="bg-transparent font-display text-5xl md:text-6xl uppercase tracking-tight text-black outline-none border-b border-stone-200 focus:border-black"
                           />
                         ) : (
-                          <h2 className="text-4xl font-serif font-light tracking-tight text-black">
+                          <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
                             {selectedPlaceForDetail.menu_heading || 'Menu & Offerings'}
                           </h2>
                         )}
@@ -9812,23 +9835,22 @@ Return ONLY valid JSON matching the schema.`;
                                       }}
                                       target={isPdf ? "_blank" : undefined}
                                       rel={isPdf ? "noopener noreferrer" : undefined}
-                                      className="grid grid-cols-2 border border-stone-200 hover:border-black transition-all group relative overflow-hidden cursor-pointer"
+                                      className="grid grid-cols-2 border border-black hover:bg-black transition-colors group relative overflow-hidden cursor-pointer"
                                     >
-                                      <div className="aspect-square bg-stone-50 overflow-hidden border-r border-stone-200 group-hover:border-black transition-colors flex items-center justify-center relative z-10">
+                                      <div className="aspect-square bg-stone-50 overflow-hidden border-r border-black flex items-center justify-center relative z-10">
                                         {isPdf ? (
-                                          <FileText className="w-8 h-8 text-stone-400 group-hover:text-black transition-colors" />
+                                          <FileText className="w-10 h-10 text-black" />
                                         ) : (
                                           <img src={pdf.url} alt={pdf.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
                                         )}
                                       </div>
                                       <div className="flex items-center justify-between gap-4 p-6 relative z-10">
-                                        <div className="space-y-1 min-w-0">
-                                          <span className="text-xs font-black uppercase tracking-[0.2em] block truncate">{pdf.name}</span>
-                                          <span className="text-[9px] text-stone-400 uppercase tracking-widest block">{isPdf ? 'PDF Document' : 'Image File'}</span>
+                                        <div className="space-y-2 min-w-0">
+                                          <span className="font-display text-xl md:text-2xl uppercase tracking-tight block truncate text-black group-hover:text-white transition-colors">{pdf.name}</span>
+                                          <span className="font-cond text-[11px] text-stone-500 uppercase tracking-[0.25em] block group-hover:text-white/70 transition-colors">{isPdf ? 'PDF Document' : 'Image File'}</span>
                                         </div>
-                                        <ArrowUpRight className="w-5 h-5 text-stone-300 group-hover:text-black transition-all flex-shrink-0" />
+                                        <ArrowUpRight className="w-5 h-5 text-black group-hover:text-white transition-colors flex-shrink-0" />
                                       </div>
-                                      <div className="absolute inset-0 bg-stone-50 translate-y-full group-hover:translate-y-0 transition-transform duration-500 pointer-events-none" />
                                     </a>
                                   );
                                 })}
@@ -9915,7 +9937,7 @@ Return ONLY valid JSON matching the schema.`;
                     <div className="sticky top-10 space-y-12">
                       
                       {/* Quick Info */}
-                      <div className="space-y-8 p-10 border border-stone-200 rounded-3xl bg-white">
+                      <div className="space-y-8 p-8 border border-black bg-[var(--gray-50)]">
                         <div className="space-y-2">
                           {isEditingDetail ? (
                             <input 
@@ -10000,14 +10022,14 @@ Return ONLY valid JSON matching the schema.`;
                         
                         {!isEditingDetail && (
                           <div className="pt-8 border-t border-stone-100 space-y-4">
-                            <button className="w-full py-5 bg-black text-white text-[10px] font-black uppercase tracking-[0.3em] hover:bg-stone-800 transition-colors rounded-xl">
+                            <button className="w-full py-4 bg-black text-white font-cond text-[13px] uppercase tracking-[0.25em] hover:bg-stone-800 transition-colors">
                               Book Experience
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 handlePlaceViewOnMap({ lat: selectedPlaceForDetail.lat, lng: selectedPlaceForDetail.lng, area_key: selectedPlaceForDetail.area_key, municipality: selectedPlaceForDetail.municipality, address: selectedPlaceForDetail.address });
                               }}
-                              className="w-full py-5 bg-white border border-black text-black text-[10px] font-black uppercase tracking-[0.3em] hover:bg-stone-50 transition-colors flex items-center justify-center gap-2 rounded-xl"
+                              className="w-full py-4 bg-white border border-black text-black font-cond text-[13px] uppercase tracking-[0.25em] hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
                             >
                               <Navigation className="w-4 h-4" />
                               {detailViewOnMapLabel}
