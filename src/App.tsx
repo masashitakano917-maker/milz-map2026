@@ -1490,6 +1490,8 @@ type AiTrendFavoriteRow = {
   lng: number | null;
   trend_score: number | string;
   created_at: string;
+  description?: string | null;
+  description_jp?: string | null;
 };
 
 type PopularAiTrend = {
@@ -4118,14 +4120,18 @@ function AppMain() {
     }
     const { data, error } = await client
       .from(AI_TREND_FAVORITES_TABLE)
-      .select('id,trend_spot_id,area_key,city_name,name,category,address,website_url,source,lat,lng,trend_score,created_at')
+      .select('id,trend_spot_id,area_key,city_name,name,category,address,website_url,source,lat,lng,trend_score,created_at,spot:ai_trend_spots(description)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Failed to load AI trend favorites:', error);
       return;
     }
-    setAiTrendFavorites((data ?? []) as AiTrendFavoriteRow[]);
+    const mapped = (data ?? []).map((row: any) => ({
+      ...row,
+      description: row?.spot?.description || '',
+    })) as AiTrendFavoriteRow[];
+    setAiTrendFavorites(mapped);
   }, [user?.id]);
 
   const fetchPopularAiTrends = useCallback(async () => {
@@ -6560,10 +6566,23 @@ Return ONLY valid JSON matching the schema.`;
                       })}
                     >
                       <Popup>
-                        <div className="p-2">
-                          <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">AI Favorite</div>
-                          <div className="font-black text-black uppercase tracking-tight">{getAiFavoriteDisplay(item, locale).name}</div>
-                        </div>
+                        {(() => {
+                          const d = getAiFavoriteDisplay(item, locale);
+                          const desc = (d.details || d.reason || '').trim();
+                          const shortDesc = desc.split(/(?<=[。．.!?！？])\s*/).slice(0, 2).join(' ').trim();
+                          return (
+                            <div className="p-3 min-w-[220px] max-w-[260px]">
+                              <div className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">AI Recommendation</div>
+                              <div className="font-black text-black tracking-tight text-sm leading-snug mb-1.5">{d.name}</div>
+                              {d.category && (
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">{d.category}</div>
+                              )}
+                              {shortDesc && (
+                                <p className="text-[11px] text-stone-600 leading-relaxed m-0">{shortDesc}</p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </Popup>
                     </Marker>
                   ))}
@@ -6581,13 +6600,24 @@ Return ONLY valid JSON matching the schema.`;
                         })}
                       >
                         <Popup>
-                          <div className="p-2">
-                            <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">AI Trend</div>
-                            <div className="font-black text-black uppercase tracking-tight">{r.name}</div>
-                            {r.city_name && (
-                              <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mt-1">{r.city_name}</div>
-                            )}
-                          </div>
+                          {(() => {
+                            const desc = (r.description || '').trim();
+                            const shortDesc = desc.split(/(?<=[。．.!?！？])\s*/).slice(0, 2).join(' ').trim();
+                            return (
+                              <div className="p-3 min-w-[220px] max-w-[260px]">
+                                <div className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em] mb-1">AI Trend</div>
+                                <div className="font-black text-black tracking-tight text-sm leading-snug mb-1.5">{r.name}</div>
+                                {(r.category || r.city_name) && (
+                                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-2">
+                                    {[r.category, r.city_name].filter(Boolean).join(' • ')}
+                                  </div>
+                                )}
+                                {shortDesc && (
+                                  <p className="text-[11px] text-stone-600 leading-relaxed m-0">{shortDesc}</p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </Popup>
                       </Marker>
                     ) : null
