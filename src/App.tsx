@@ -3049,8 +3049,8 @@ function AppMain() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [selectedBadge, setSelectedBadge] = useState<string | 'all'>('all');
-  const [aiTrendFavFilter, setAiTrendFavFilter] = useState(false);
-  const [aiRecommendationFavFilter, setAiRecommendationFavFilter] = useState(false);
+  const [aiTrendFavFilter, setAiTrendFavFilter] = useState(true);
+  const [aiRecommendationFavFilter, setAiRecommendationFavFilter] = useState(true);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORY_OPTIONS);
   const [badgeOptions, setBadgeOptions] = useState<string[]>(DEFAULT_BADGE_OPTIONS);
   const [filterOptionName, setFilterOptionName] = useState('');
@@ -6354,7 +6354,7 @@ Return ONLY valid JSON matching the schema.`;
                             <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
                               <div className="min-w-0">
                                 <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Trend Fav</p>
-                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIトレンドのお気に入りのみ表示' : 'Show AI trend favorites only'}</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIトレンドのお気に入りを表示' : 'Show AI trend favorites'}</p>
                               </div>
                               <button
                                 type="button"
@@ -6375,7 +6375,7 @@ Return ONLY valid JSON matching the schema.`;
                             <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
                               <div className="min-w-0">
                                 <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Recommendation Fav</p>
-                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIおすすめのお気に入りのみ表示' : 'Show AI recommendation favorites only'}</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIおすすめのお気に入りを表示' : 'Show AI recommendation favorites'}</p>
                               </div>
                               <button
                                 type="button"
@@ -6402,8 +6402,8 @@ Return ONLY valid JSON matching the schema.`;
                               setLocationFilter(createLocationFilterFromArea('tokyo', 'Shibuya'));
                               setSelectedCategory('all');
                               setSelectedBadge('all');
-                              setAiTrendFavFilter(false);
-                              setAiRecommendationFavFilter(false);
+                              setAiTrendFavFilter(true);
+                              setAiRecommendationFavFilter(true);
                               setIsFiltering(false);
                             }}
                             className="w-full py-3 text-[10px] font-black text-stone-400 hover:text-stone-900 transition-colors"
@@ -6414,9 +6414,9 @@ Return ONLY valid JSON matching the schema.`;
                             onClick={() => {
                               setActiveTab('map');
                               setIsFiltering(false);
-                              const placesCount = (aiTrendFavFilter || aiRecommendationFavFilter) ? 0 : filteredPlaces.length;
-                              const trendCount = (aiRecommendationFavFilter && !aiTrendFavFilter) ? 0 : aiTrendFavorites.filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number').length;
-                              const aiFavCount = (aiTrendFavFilter && !aiRecommendationFavFilter) ? 0 : aiFavorites.length;
+                              const placesCount = filteredPlaces.length;
+                              const trendCount = aiTrendFavFilter ? aiTrendFavorites.filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number').length : 0;
+                              const aiFavCount = aiRecommendationFavFilter ? aiFavorites.length : 0;
                               const total = placesCount + trendCount + aiFavCount;
                               showToast(
                                 locale === 'jp'
@@ -6449,12 +6449,12 @@ Return ONLY valid JSON matching the schema.`;
                 <TokyoMiniatureMap
                   apiKey={import.meta.env.VITE_MAPTILER_KEY}
                   styleVariant={mapStyle as any}
-                  places={(aiTrendFavFilter || aiRecommendationFavFilter) ? [] : filteredPlaces}
+                  places={filteredPlaces}
                   tempAiPin={tempAiPin}
-                  aiFavoritePins={(aiTrendFavFilter && !aiRecommendationFavFilter) ? [] : aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name }))}
-                  aiTrendPins={(aiRecommendationFavFilter && !aiTrendFavFilter) ? [] : aiTrendFavorites
+                  aiFavoritePins={aiRecommendationFavFilter ? aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name })) : []}
+                  aiTrendPins={aiTrendFavFilter ? aiTrendFavorites
                     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
-                    .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name }))}
+                    .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name })) : []}
                   newPlacePos={newPlacePos}
                   role={role}
                   activeTab={activeTab}
@@ -6493,7 +6493,7 @@ Return ONLY valid JSON matching the schema.`;
                     onFocusHandled={() => setPendingMapFocus(null)}
                   />
                   
-                  {((aiTrendFavFilter || aiRecommendationFavFilter) ? [] : filteredPlaces).map((place) => (
+                  {filteredPlaces.map((place) => (
                     <Marker
                       key={place.id}
                       position={[place.lat, place.lng]}
@@ -6548,7 +6548,7 @@ Return ONLY valid JSON matching the schema.`;
 
 
 
-                  {((aiTrendFavFilter && !aiRecommendationFavFilter) ? [] : aiFavorites).map((item) => (
+                  {(aiRecommendationFavFilter ? aiFavorites : []).map((item) => (
                     <Marker
                       key={item.key}
                       position={[item.lat, item.lng]}
@@ -6568,7 +6568,7 @@ Return ONLY valid JSON matching the schema.`;
                     </Marker>
                   ))}
 
-                  {((aiRecommendationFavFilter && !aiTrendFavFilter) ? [] : aiTrendFavorites).map((r) => (
+                  {(aiTrendFavFilter ? aiTrendFavorites : []).map((r) => (
                     typeof r.lat === 'number' && typeof r.lng === 'number' ? (
                       <Marker
                         key={`trend-${r.id}`}
