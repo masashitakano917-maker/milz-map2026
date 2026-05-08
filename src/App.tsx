@@ -4296,30 +4296,77 @@ function AppMain() {
   const [modalAddress, setModalAddress] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
 
+  const geocodeWithNominatim = async (query: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&accept-language=ja&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          return { lat, lng: lon };
+        }
+      }
+    } catch (err) {
+      console.warn('Nominatim geocoding failed', err);
+    }
+    return null;
+  };
+
   const handleModalAddressSearch = async () => {
     if (!modalAddress.trim()) return;
     setIsGeocoding(true);
     try {
-      const response = await callGeminiProxy({
-        model: "gemini-3-flash-preview",
-        contents: `Find the latitude and longitude for: "${modalAddress}". Return ONLY a JSON object with "lat" and "lng" keys.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              lat: { type: Type.NUMBER },
-              lng: { type: Type.NUMBER }
-            },
-            required: ["lat", "lng"]
-          }
-        }
-      });
+      const raw = modalAddress.trim();
 
-      const coords = JSON.parse(response.text);
-      if (coords.lat && coords.lng) {
+      let coords = await geocodeWithNominatim(raw);
+
+      if (!coords) {
+        const simplified = raw
+          .replace(/\d+F\b.*/i, '')
+          .replace(/[０-９]+Ｆ.*/g, '')
+          .replace(/\s+\S+$/, '')
+          .trim();
+        if (simplified && simplified !== raw) {
+          coords = await geocodeWithNominatim(simplified);
+        }
+      }
+
+      if (!coords) {
+        const response = await callGeminiProxy({
+          model: "gemini-3-flash-preview",
+          contents: `Return the precise latitude and longitude of this exact address in Japan. Do not guess if unsure.\nAddress: "${raw}"\nReturn ONLY a JSON object with "lat" and "lng" keys.`,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                lat: { type: Type.NUMBER },
+                lng: { type: Type.NUMBER }
+              },
+              required: ["lat", "lng"]
+            }
+          }
+        });
+        const parsed = JSON.parse(response.text);
+        if (Number.isFinite(parsed?.lat) && Number.isFinite(parsed?.lng)) {
+          coords = { lat: parsed.lat, lng: parsed.lng };
+        }
+      }
+
+      if (coords) {
         setNewPlacePos({ lat: coords.lat, lng: coords.lng });
-        mapRef.current?.flyTo([coords.lat, coords.lng], 16);
+        mapRef.current?.flyTo([coords.lat, coords.lng], 17);
+        showToast(
+          locale === 'jp'
+            ? '住所から座標を取得しました。位置がずれている場合は地図上でピンをドラッグして調整してください。'
+            : 'Located from address. If off, drag the pin on the map to fine-tune.',
+          'info'
+        );
+      } else {
+        showToast(locale === 'jp' ? 'この住所から場所を見つけられませんでした。' : 'Could not find location for this address.', "error");
       }
     } catch (error) {
       console.error('Modal geocoding error:', error);
