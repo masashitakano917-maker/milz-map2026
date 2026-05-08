@@ -3061,6 +3061,7 @@ function AppMain() {
   const [aiLeaderboard, setAiLeaderboard] = useState<AiRecommendationMetric[]>([]);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [selectedPlaceForDetail, setSelectedPlaceForDetail] = useState<Place | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const openPlaceDetail = React.useCallback((target: Place | string | null | undefined) => {
     if (!target) {
@@ -9262,11 +9263,13 @@ Return ONLY valid JSON matching the schema.`;
                           <div key={i} className={cn(
                             "relative overflow-hidden bg-stone-100 group cursor-zoom-in",
                             i % 3 === 0 ? "col-span-2 aspect-[16/9]" : "aspect-square"
-                          )}>
-                            <img 
-                              src={img} 
-                              className="w-full h-full object-cover transition-all duration-1000 scale-105 group-hover:scale-100" 
-                              referrerPolicy="no-referrer" 
+                          )}
+                            onClick={() => { if (!isEditingDetail) setLightboxImage(img); }}
+                          >
+                            <img
+                              src={img}
+                              className="w-full h-full object-cover transition-all duration-1000 scale-105 group-hover:scale-100"
+                              referrerPolicy="no-referrer"
                             />
                             {isEditingDetail && (
                               <button 
@@ -9587,25 +9590,44 @@ Return ONLY valid JSON matching the schema.`;
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-4">
-                                  {editDetailForm.pdfs?.map((pdf, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-stone-50 border border-stone-200 rounded-xl">
-                                      <div className="flex items-center gap-4 overflow-hidden">
-                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                                          {pdf.url.toLowerCase().endsWith('.pdf') ? <FileText className="w-4 h-4 text-stone-400" /> : <ImageIcon className="w-4 h-4 text-stone-400" />}
+                                  {editDetailForm.pdfs?.map((pdf, i) => {
+                                    const isPdfItem = pdf.url.toLowerCase().endsWith('.pdf');
+                                    return (
+                                      <div key={i} className="flex items-center justify-between gap-3 p-4 bg-stone-50 border border-stone-200 rounded-xl">
+                                        <div className="flex items-center gap-4 overflow-hidden flex-1">
+                                          <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-stone-200">
+                                            {isPdfItem ? (
+                                              <FileText className="w-5 h-5 text-stone-400" />
+                                            ) : (
+                                              <img src={pdf.url} alt={pdf.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                            )}
+                                          </div>
+                                          <input
+                                            type="text"
+                                            value={pdf.name}
+                                            onChange={(e) => {
+                                              const newName = e.target.value;
+                                              setEditDetailForm((prev) => ({
+                                                ...prev,
+                                                pdfs: (prev.pdfs || []).map((p, idx) => idx === i ? { ...p, name: newName } : p),
+                                              }));
+                                            }}
+                                            className="flex-1 bg-white border border-stone-200 rounded-md px-2 py-1 text-xs font-bold text-black outline-none focus:border-black transition-all"
+                                            placeholder={locale === 'jp' ? '表示名' : 'Display name'}
+                                          />
                                         </div>
-                                        <span className="text-xs font-bold truncate">{pdf.name}</span>
+                                        <button
+                                          onClick={() => {
+                                            const newPdfs = (editDetailForm.pdfs || []).filter((_, idx) => idx !== i);
+                                            setEditDetailForm({ ...editDetailForm, pdfs: newPdfs });
+                                          }}
+                                          className="w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all flex-shrink-0"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
                                       </div>
-                                      <button 
-                                        onClick={() => {
-                                          const newPdfs = (editDetailForm.pdfs || []).filter((_, idx) => idx !== i);
-                                          setEditDetailForm({ ...editDetailForm, pdfs: newPdfs });
-                                        }}
-                                        className="w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-all"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
 
                                 <div className="p-6 border border-dashed border-stone-200 rounded-xl bg-stone-50/50">
@@ -9619,19 +9641,25 @@ Return ONLY valid JSON matching the schema.`;
                                 {selectedPlaceForDetail.pdfs?.map((pdf, i) => {
                                   const isPdf = pdf.url.toLowerCase().endsWith('.pdf');
                                   return (
-                                    <a 
+                                    <a
                                       key={i}
-                                      href={pdf.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center justify-between p-8 border border-stone-200 hover:border-black transition-all group relative overflow-hidden"
+                                      href={isPdf ? pdf.url : undefined}
+                                      onClick={(e) => {
+                                        if (!isPdf) {
+                                          e.preventDefault();
+                                          setLightboxImage(pdf.url);
+                                        }
+                                      }}
+                                      target={isPdf ? "_blank" : undefined}
+                                      rel={isPdf ? "noopener noreferrer" : undefined}
+                                      className="flex items-center justify-between p-8 border border-stone-200 hover:border-black transition-all group relative overflow-hidden cursor-pointer"
                                     >
                                       <div className="flex items-center gap-6 z-10">
-                                        <div className="w-12 h-12 bg-stone-50 rounded-xl flex items-center justify-center group-hover:bg-black transition-colors">
+                                        <div className="w-14 h-14 bg-stone-50 rounded-xl flex items-center justify-center overflow-hidden border border-stone-200 group-hover:border-black transition-colors flex-shrink-0">
                                           {isPdf ? (
-                                            <FileText className="w-5 h-5 text-stone-400 group-hover:text-white" />
+                                            <FileText className="w-5 h-5 text-stone-400 group-hover:text-black" />
                                           ) : (
-                                            <ImageIcon className="w-5 h-5 text-stone-400 group-hover:text-white" />
+                                            <img src={pdf.url} alt={pdf.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                           )}
                                         </div>
                                         <div className="space-y-1">
@@ -9855,6 +9883,38 @@ Return ONLY valid JSON matching the schema.`;
                   </div>
                 </div>
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Lightbox for Photos */}
+        <AnimatePresence>
+          {lightboxImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[4000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 cursor-zoom-out"
+              onClick={() => setLightboxImage(null)}
+            >
+              <motion.img
+                initial={{ scale: 0.92, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.92, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                src={lightboxImage}
+                alt=""
+                referrerPolicy="no-referrer"
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-[95vw] max-h-[95vh] object-contain rounded-xl shadow-2xl"
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxImage(null); }}
+                className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition-all"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
