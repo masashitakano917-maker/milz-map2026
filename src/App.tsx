@@ -4219,34 +4219,31 @@ function AppMain() {
         });
         if (error) throw error;
 
-        const accessToken = signUpData?.session?.access_token;
-        try {
-          const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
-          const notifyRes = await fetch(notifyUrl, {
-            method: 'POST',
-            headers: {
-              ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }),
-              'Content-Type': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({ email, language: locale }),
-          });
-          const notifyBody = await notifyRes.json().catch(() => ({}));
-          console.log('signup-notify result', notifyRes.status, notifyBody);
-          if (!notifyRes.ok) {
-            console.warn('signup-notify non-OK', notifyBody);
-          }
-        } catch (notifyErr) {
-          console.warn('signup-notify failed', notifyErr);
-        }
-
-        try { await client.auth.signOut(); } catch { /* ignore */ }
-        setUser(null);
-        setRole(null);
-
         setAuthEmailSent(true);
         setPendingRole(null);
         showToast(locale === 'jp' ? '確認メールを送信しました。メール内のボタンから認証を完了してください。' : 'Check your email and click the verification link to continue.', 'info');
+
+        const accessToken = signUpData?.session?.access_token;
+        const notifyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/signup-notify`;
+        fetch(notifyUrl, {
+          method: 'POST',
+          headers: {
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }),
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ email, language: locale }),
+        })
+          .then(async (res) => {
+            const body = await res.json().catch(() => ({}));
+            console.log('signup-notify result', res.status, body);
+          })
+          .catch((err) => console.warn('signup-notify failed', err))
+          .finally(() => {
+            client.auth.signOut().catch(() => {});
+            setUser(null);
+            setRole(null);
+          });
       } else {
         setAuthEmailSent(false);
         const { data: signInData, error } = await client.auth.signInWithPassword({
