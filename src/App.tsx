@@ -3049,6 +3049,8 @@ function AppMain() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [selectedBadge, setSelectedBadge] = useState<string | 'all'>('all');
+  const [aiTrendFavFilter, setAiTrendFavFilter] = useState(false);
+  const [aiRecommendationFavFilter, setAiRecommendationFavFilter] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORY_OPTIONS);
   const [badgeOptions, setBadgeOptions] = useState<string[]>(DEFAULT_BADGE_OPTIONS);
   const [filterOptionName, setFilterOptionName] = useState('');
@@ -6346,12 +6348,62 @@ Return ONLY valid JSON matching the schema.`;
                           </div>
                         </div>
 
+                        <div className="space-y-4">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{locale === 'jp' ? 'AIお気に入り' : 'AI Favorites'}</p>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Trend Fav</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIトレンドのお気に入りのみ表示' : 'Show AI trend favorites only'}</p>
+                              </div>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={aiTrendFavFilter}
+                                onClick={() => setAiTrendFavFilter((v) => !v)}
+                                className={cn(
+                                  "relative w-11 h-6 rounded-full transition-colors shrink-0",
+                                  aiTrendFavFilter ? "bg-black" : "bg-stone-300"
+                                )}
+                              >
+                                <span className={cn(
+                                  "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                                  aiTrendFavFilter && "translate-x-5"
+                                )} />
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
+                              <div className="min-w-0">
+                                <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Recommendation Fav</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIおすすめのお気に入りのみ表示' : 'Show AI recommendation favorites only'}</p>
+                              </div>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={aiRecommendationFavFilter}
+                                onClick={() => setAiRecommendationFavFilter((v) => !v)}
+                                className={cn(
+                                  "relative w-11 h-6 rounded-full transition-colors shrink-0",
+                                  aiRecommendationFavFilter ? "bg-black" : "bg-stone-300"
+                                )}
+                              >
+                                <span className={cn(
+                                  "absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform",
+                                  aiRecommendationFavFilter && "translate-x-5"
+                                )} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <button
                             onClick={() => {
                               setLocationFilter(createLocationFilterFromArea('tokyo', 'Shibuya'));
                               setSelectedCategory('all');
                               setSelectedBadge('all');
+                              setAiTrendFavFilter(false);
+                              setAiRecommendationFavFilter(false);
                               setIsFiltering(false);
                             }}
                             className="w-full py-3 text-[10px] font-black text-stone-400 hover:text-stone-900 transition-colors"
@@ -6362,7 +6414,10 @@ Return ONLY valid JSON matching the schema.`;
                             onClick={() => {
                               setActiveTab('map');
                               setIsFiltering(false);
-                              const total = filteredPlaces.length;
+                              const placesCount = (aiTrendFavFilter || aiRecommendationFavFilter) ? 0 : filteredPlaces.length;
+                              const trendCount = (aiRecommendationFavFilter && !aiTrendFavFilter) ? 0 : aiTrendFavorites.filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number').length;
+                              const aiFavCount = (aiTrendFavFilter && !aiRecommendationFavFilter) ? 0 : aiFavorites.length;
+                              const total = placesCount + trendCount + aiFavCount;
                               showToast(
                                 locale === 'jp'
                                   ? `フィルター適用: ${total}件のスポットを表示中`
@@ -6394,10 +6449,10 @@ Return ONLY valid JSON matching the schema.`;
                 <TokyoMiniatureMap
                   apiKey={import.meta.env.VITE_MAPTILER_KEY}
                   styleVariant={mapStyle as any}
-                  places={filteredPlaces}
+                  places={(aiTrendFavFilter || aiRecommendationFavFilter) ? [] : filteredPlaces}
                   tempAiPin={tempAiPin}
-                  aiFavoritePins={aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name }))}
-                  aiTrendPins={aiTrendFavorites
+                  aiFavoritePins={(aiTrendFavFilter && !aiRecommendationFavFilter) ? [] : aiFavorites.map((item) => ({ key: item.key, lat: item.lat, lng: item.lng, name: getAiFavoriteDisplay(item, locale).name }))}
+                  aiTrendPins={(aiRecommendationFavFilter && !aiTrendFavFilter) ? [] : aiTrendFavorites
                     .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
                     .map((r) => ({ key: r.id, lat: r.lat as number, lng: r.lng as number, name: r.name }))}
                   newPlacePos={newPlacePos}
