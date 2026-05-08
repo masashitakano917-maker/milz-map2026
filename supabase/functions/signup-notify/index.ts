@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const HOME_URL = "https://milz-map.com";
-const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw5UKkeQsmlNpkeaioaNdIF4_UtOiFf4x69qI2FUCCUt9gd7-z6ckkbWWrwcWxqTZnq/exec";
+const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzE8lg8a9qK9EgVxEFi_zoR856JU0Sf4DvRgmg5XGddImMh08HyatJcGgdAqEOhruxi/exec";
 const GAS_SECRET = "Mz8vX2qRkT9wY4pB3nH7jL1sD6fGcV5aQeU0oI8yK2mN4bC6xZ3rW9tE1hP5uJ7d";
 
 Deno.serve(async (req: Request) => {
