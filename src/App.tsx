@@ -9812,23 +9812,23 @@ Return ONLY valid JSON matching the schema.`;
                                       }}
                                       target={isPdf ? "_blank" : undefined}
                                       rel={isPdf ? "noopener noreferrer" : undefined}
-                                      className="flex items-center justify-between p-8 border border-stone-200 hover:border-black transition-all group relative overflow-hidden cursor-pointer"
+                                      className="grid grid-cols-2 border border-stone-200 hover:border-black transition-all group relative overflow-hidden cursor-pointer"
                                     >
-                                      <div className="flex items-center gap-6 z-10">
-                                        <div className="w-14 h-14 bg-stone-50 rounded-xl flex items-center justify-center overflow-hidden border border-stone-200 group-hover:border-black transition-colors flex-shrink-0">
-                                          {isPdf ? (
-                                            <FileText className="w-5 h-5 text-stone-400 group-hover:text-black" />
-                                          ) : (
-                                            <img src={pdf.url} alt={pdf.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                          )}
-                                        </div>
-                                        <div className="space-y-1">
-                                          <span className="text-xs font-black uppercase tracking-[0.2em] block">{pdf.name}</span>
+                                      <div className="aspect-square bg-stone-50 overflow-hidden border-r border-stone-200 group-hover:border-black transition-colors flex items-center justify-center relative z-10">
+                                        {isPdf ? (
+                                          <FileText className="w-8 h-8 text-stone-400 group-hover:text-black transition-colors" />
+                                        ) : (
+                                          <img src={pdf.url} alt={pdf.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
+                                        )}
+                                      </div>
+                                      <div className="flex items-center justify-between gap-4 p-6 relative z-10">
+                                        <div className="space-y-1 min-w-0">
+                                          <span className="text-xs font-black uppercase tracking-[0.2em] block truncate">{pdf.name}</span>
                                           <span className="text-[9px] text-stone-400 uppercase tracking-widest block">{isPdf ? 'PDF Document' : 'Image File'}</span>
                                         </div>
+                                        <ArrowUpRight className="w-5 h-5 text-stone-300 group-hover:text-black transition-all flex-shrink-0" />
                                       </div>
-                                      <ArrowUpRight className="w-5 h-5 text-stone-300 group-hover:text-black transition-all z-10" />
-                                      <div className="absolute inset-0 bg-stone-50 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                      <div className="absolute inset-0 bg-stone-50 translate-y-full group-hover:translate-y-0 transition-transform duration-500 pointer-events-none" />
                                     </a>
                                   );
                                 })}
