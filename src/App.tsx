@@ -6346,7 +6346,7 @@ Return ONLY valid JSON matching the schema.`;
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <button
                             onClick={() => {
                               setLocationFilter(createLocationFilterFromArea('tokyo', 'Shibuya'));
@@ -6356,7 +6356,24 @@ Return ONLY valid JSON matching the schema.`;
                             }}
                             className="w-full py-3 text-[10px] font-black text-stone-400 hover:text-stone-900 transition-colors"
                           >
-                            CLEAR ALL FILTERS
+                            {locale === 'jp' ? 'フィルターをクリア' : 'CLEAR ALL FILTERS'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveTab('map');
+                              setIsFiltering(false);
+                              const total = filteredPlaces.length;
+                              showToast(
+                                locale === 'jp'
+                                  ? `フィルター適用: ${total}件のスポットを表示中`
+                                  : `Filters applied: ${total} spot${total === 1 ? '' : 's'} shown`,
+                                'success'
+                              );
+                            }}
+                            className="w-full py-5 bg-white border border-black text-black font-black text-[10px] uppercase tracking-[0.3em] active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-stone-50"
+                          >
+                            <Search className="w-4 h-4" />
+                            {locale === 'jp' ? 'この条件で検索' : 'APPLY FILTERS'}
                           </button>
                           <button
                             onClick={handleSearchLocation}
@@ -6364,7 +6381,7 @@ Return ONLY valid JSON matching the schema.`;
                             className="w-full py-5 bg-black text-white font-black text-[10px] uppercase tracking-[0.3em] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                           >
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            GO TO LOCATION
+                            {locale === 'jp' ? '場所へ移動' : 'GO TO LOCATION'}
                           </button>
                         </div>
                   </div>
