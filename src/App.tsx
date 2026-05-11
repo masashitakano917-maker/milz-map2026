@@ -9617,8 +9617,13 @@ Return ONLY valid JSON matching the schema.`;
                     ) : (
                       <>
                         <div className="text-[11px] font-semibold text-white uppercase tracking-[0.35em]">
-                          ★ {selectedPlaceForDetail.category} {selectedPlaceForDetail.address ? `/ ${selectedPlaceForDetail.address.split(',')[0]}` : ''} ★
+                          ★ {(tPlace('category', selectedPlaceForDetail.category) || selectedPlaceForDetail.category)} {selectedPlaceForDetail.address ? `/ ${(tPlace('address', selectedPlaceForDetail.address) || selectedPlaceForDetail.address).split(',')[0]}` : ''} ★
                         </div>
+                        {locale === 'en' && selectedPlaceForDetail.address && (
+                          <div className="text-[10px] font-medium text-white/70 tracking-[0.2em] mt-1">
+                            {selectedPlaceForDetail.address.split(',')[0]}
+                          </div>
+                        )}
                         <h1 className="font-display text-[72px] md:text-[160px] text-white leading-[0.88] tracking-tight uppercase max-w-6xl">
                           {selectedPlaceForDetail.name}
                         </h1>
@@ -10267,12 +10272,25 @@ Return ONLY valid JSON matching the schema.`;
                               placeholder="Full Address"
                             />
                           ) : (
-                            <p className="text-sm font-bold text-black leading-relaxed">
-                              {tPlace('address', selectedPlaceForDetail.address) || selectedPlaceForDetail.address || (locale === 'jp' ? '住所情報なし' : 'Address not provided')}
-                              {isTranslatingDetail && !placeTranslation && locale === 'en' && selectedPlaceForDetail.address && (
-                                <span className="ml-2 text-[10px] font-black tracking-widest text-stone-400 uppercase">Translating...</span>
+                            <div className="space-y-1.5">
+                              {locale === 'en' && selectedPlaceForDetail.address ? (
+                                <>
+                                  <p className="text-sm font-bold text-black leading-relaxed">
+                                    {tPlace('address', selectedPlaceForDetail.address) || selectedPlaceForDetail.address}
+                                    {isTranslatingDetail && !placeTranslation && (
+                                      <span className="ml-2 text-[10px] font-black tracking-widest text-stone-400 uppercase">Translating...</span>
+                                    )}
+                                  </p>
+                                  <p className="text-xs font-medium text-stone-500 leading-relaxed">
+                                    {selectedPlaceForDetail.address}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-sm font-bold text-black leading-relaxed">
+                                  {selectedPlaceForDetail.address || (locale === 'jp' ? '住所情報なし' : 'Address not provided')}
+                                </p>
                               )}
-                            </p>
+                            </div>
                           )}
                         </div>
                         <div className="space-y-2">

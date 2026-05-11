@@ -15,6 +15,7 @@ const TRANSLATABLE_FIELDS = [
   "description",
   "detailed_description",
   "milz_experience",
+  "category",
   "address",
   "hours",
   "hours_label",
