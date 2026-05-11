@@ -8120,21 +8120,28 @@ Return ONLY valid JSON matching the schema.`;
                               {locale === 'jp' ? 'ランキングデータはまだありません。Milz AIを実行するとここに人気順が表示されます。' : 'No ranking data yet. Run Milz AI and interactions will start appearing here.'}
                             </div>
                           ) : (
-                            aiLeaderboard.map((item, index) => (
-                              <button
-                                key={`${item.recommendation_name}-${index}`}
-                                onClick={() => handleAiViewOnMap({ name: item.recommendation_name, lat: item.lat, lng: item.lng, category: item.category, details: item.details })}
-                                className="w-full text-left rounded-[1.6rem] border border-stone-100 bg-stone-50 p-5 hover:border-black transition-all"
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-300">{locale === 'jp' ? `第${index + 1}位` : `Top ${index + 1}`}</div>
-                                    <div className="mt-2 text-base font-black text-black leading-snug">{item.recommendation_name}</div>
-                                    <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">{item.category}</div>
+                            aiLeaderboard.map((item, index) => {
+                              const itemKey = createAiFavoriteKey({ lat: item.lat, lng: item.lng });
+                              const favMatch = aiFavorites.find((f) => createAiFavoriteKey({ lat: f.lat, lng: f.lng }) === itemKey);
+                              const aiRecMatch = (aiResults?.recommendations || []).find((r) => createAiFavoriteKey({ lat: r.lat, lng: r.lng }) === itemKey);
+                              const displayName = favMatch ? getAiFavoriteDisplay(favMatch, locale).name : (aiRecMatch?.name || item.recommendation_name);
+                              const displayCategory = favMatch ? getAiFavoriteDisplay(favMatch, locale).category : (aiRecMatch?.category || localizeCategory(item.category, locale));
+                              return (
+                                <button
+                                  key={`${item.recommendation_name}-${index}`}
+                                  onClick={() => handleAiViewOnMap({ name: item.recommendation_name, lat: item.lat, lng: item.lng, category: item.category, details: item.details })}
+                                  className="w-full text-left rounded-[1.6rem] border border-stone-100 bg-stone-50 p-5 hover:border-black transition-all"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-300">{locale === 'jp' ? `第${index + 1}位` : `Top ${index + 1}`}</div>
+                                      <div className="mt-2 text-base font-black text-black leading-snug">{displayName}</div>
+                                      <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">{displayCategory}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </button>
-                            ))
+                                </button>
+                              );
+                            })
                           )}
                         </div>
                       </div>
