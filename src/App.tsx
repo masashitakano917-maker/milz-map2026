@@ -2213,17 +2213,17 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     aiEyebrow: 'MILZ AI DISCOVERY',
     aiTitle: '選択した地域のおすすめを取得',
     aiSubtitle: 'MILZが地域ごとに厳選した候補をまとめます。',
-    activeRegion: 'Active region',
-    regionHint: 'REGIONを切り替えると、MAPとAIの対象地域も切り替わります。',
-    currentScope: 'Current Scope',
+    activeRegion: '現在の地域',
+    regionHint: '地域を切り替えると、MAPとAIの対象エリアも変わります。',
+    currentScope: '現在の対象範囲',
     getRecommendations: 'おすすめを取得',
-    recommendedSpots: 'AI Recommendations',
-    itemsFound: 'items found',
-    viewOnMap: 'View on MAP',
-    saveAi: 'AI Save',
-    savedAi: 'Saved',
-    aiFavoritesTab: 'AI FAVORITES',
-    noAiFavorites: 'AI Recommendationのお気に入りはまだありません。',
+    recommendedSpots: 'AIおすすめスポット',
+    itemsFound: '件',
+    viewOnMap: 'MAPで見る',
+    saveAi: '保存',
+    savedAi: '保存済み',
+    aiFavoritesTab: 'AIお気に入り',
+    noAiFavorites: 'AIおすすめのお気に入りはまだありません。',
     openAiTabHint: 'AIタブで保存したおすすめがここに表示されます。',
     savedAt: '保存日',
     aiGeneratedNote: 'AIレコメンドは選択した地域に基づいて生成されています。地域によって精度が異なる場合があります。',
@@ -2270,12 +2270,12 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     milzVideoLabel: 'MILZ VIDEO',
     videoUnavailable: '動画を再生できません',
     openLink: 'リンクを開く',
-    aiViewRecommend: 'AIレコメンド',
-    aiViewTrend: 'AIウィークリートレンド',
+    aiViewRecommend: 'AIおすすめ',
+    aiViewTrend: 'AI週間トレンド',
     locationFilterLabel: 'ロケーションフィルター',
     selectRegion: '地域を選択',
-    trendAreaHint: 'AI Weekly Trendは都市(Area)単位で集計されます。',
-    regionSwitchHint: 'Regionを切り替えると、MapとAIの対象地域も切り替わります。',
+    trendAreaHint: 'AI週間トレンドはエリア単位で集計されます。',
+    regionSwitchHint: '地域を切り替えると、MAPとAIの対象エリアも変わります。',
     walkRadiusLabel: '徒歩半径',
     milzAiButton: 'Milz AI',
     aiTrendLabel: 'AIトレンド',
@@ -7716,7 +7716,7 @@ Return ONLY valid JSON matching the schema.`;
                       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
                         <div className="space-y-1">
                           <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
-                            {aiView === 'trend' ? (locale === 'jp' ? 'エリアフィルター' : 'AREA FILTER') : t('locationFilterLabel')}
+                            {aiView === 'trend' ? (locale === 'jp' ? 'エリアフィルター' : 'Area Filter') : t('locationFilterLabel')}
                           </p>
                           <h3 className="text-2xl font-black text-black tracking-tight">
                             {aiView === 'trend' ? t('selectRegion') : t('activeRegion')}
@@ -8103,13 +8103,13 @@ Return ONLY valid JSON matching the schema.`;
                   <div className="lg:col-span-4 space-y-6">
                     <div className="bg-white p-5 md:p-8 xl:p-10 rounded-[2rem] md:rounded-[2.5rem] border border-stone-100 shadow-sm space-y-6 md:space-y-10 sticky top-20 md:top-24">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">AI RECOMMENDATION</p>
-                        <h3 className="text-xl font-black text-black tracking-tight">Top 5 in MILZ AI</h3>
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">{locale === 'jp' ? 'AIおすすめ' : 'AI RECOMMENDATION'}</p>
+                        <h3 className="text-xl font-black text-black tracking-tight">{locale === 'jp' ? 'MILZ AI トップ5' : 'Top 5 in MILZ AI'}</h3>
                       </div>
 
                       <div className="space-y-4">
                         <div className="rounded-[1.6rem] border border-stone-100 bg-stone-50 p-5">
-                          <div className="text-[9px] font-black uppercase tracking-[0.28em] text-stone-400">Active Area</div>
+                          <div className="text-[9px] font-black uppercase tracking-[0.28em] text-stone-400">{locale === 'jp' ? '現在のエリア' : 'Active Area'}</div>
                           <div className="mt-2 text-lg font-black tracking-tight text-black">{locationFilter.areaName}</div>
                           <div className="mt-1 text-sm font-medium text-stone-500">{locationFilter.cityName}</div>
                         </div>
@@ -8128,7 +8128,7 @@ Return ONLY valid JSON matching the schema.`;
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-300">Top {index + 1}</div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-stone-300">{locale === 'jp' ? `第${index + 1}位` : `Top ${index + 1}`}</div>
                                     <div className="mt-2 text-base font-black text-black leading-snug">{item.recommendation_name}</div>
                                     <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-stone-400">{item.category}</div>
                                   </div>
@@ -10429,7 +10429,7 @@ Return ONLY valid JSON matching the schema.`;
                     <div className="space-y-5">
                       <div className="flex items-start justify-between gap-4 pr-8">
                         <div className="space-y-2 min-w-0">
-                          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em]">AI RECOMMENDATION</p>
+                          <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.22em]">{locale === 'jp' ? 'AIおすすめ' : 'AI RECOMMENDATION'}</p>
                           <p className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em]">{localized.category}</p>
                           <h3 className="text-xl font-black text-black leading-tight">{localized.name}</h3>
                         </div>
