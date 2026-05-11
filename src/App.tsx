@@ -9704,7 +9704,7 @@ Return ONLY valid JSON matching the schema.`;
                               placeholder="Describe the MILZ experience..."
                             />
                           ) : (
-                            <p className="text-xl md:text-2xl font-medium text-stone-800 leading-[1.7]">
+                            <p className="text-xl md:text-2xl font-medium text-stone-800 leading-[1.7] whitespace-pre-line">
                               {tPlace('milz_experience', selectedPlaceForDetail.milz_experience)
                                 || selectedPlaceForDetail.milz_experience
                                 || tPlace('detailed_description', selectedPlaceForDetail.detailed_description)
