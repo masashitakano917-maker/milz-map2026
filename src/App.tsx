@@ -2225,9 +2225,71 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     aiFavoritesTab: 'AI FAVORITES',
     noAiFavorites: 'AI Recommendationのお気に入りはまだありません。',
     openAiTabHint: 'AIタブで保存したおすすめがここに表示されます。',
-    savedAt: 'Saved',
-    aiGeneratedNote: 'AI recommendations are generated based on the selected scope. Accuracy may vary by region.',
-    language: 'Language',
+    savedAt: '保存日',
+    aiGeneratedNote: 'AIレコメンドは選択した地域に基づいて生成されています。地域によって精度が異なる場合があります。',
+    language: '言語',
+    shortsEmpty: 'まだShortsが登録されていません。',
+    shortsHint: '登録されたYouTube Shortsは、ここでスワイプ形式で表示されます。',
+    openSpot: 'スポット詳細',
+    backToAi: 'AIに戻る',
+    mapSearchPlaceholder: 'スポットを検索...',
+    filterSettings: 'フィルター & 設定',
+    areaLabel: 'エリア',
+    cityWardLabel: '市区町村',
+    drivenByStation: '（駅で絞込中）',
+    allWardsOption: 'すべての区',
+    stationLabel: '駅',
+    allStationsOption: 'すべての駅',
+    categoriesLabel: 'カテゴリー',
+    allCategoriesOption: 'すべて',
+    badgesLabel: 'バッジ',
+    allBadgesOption: 'すべて',
+    aiTrendFavLabel: 'AIトレンドお気に入り',
+    showAiTrendFavDesc: 'AIトレンドのお気に入りを表示',
+    aiRecFavLabel: 'AIレコメンドお気に入り',
+    showAiRecFavDesc: 'AIおすすめのお気に入りを表示',
+    clearAllFilters: 'フィルターをクリア',
+    backToSpots: 'SPOTSへ戻る',
+    listFilterHome: 'HOME',
+    listFilterAll: 'ALL',
+    listFilterFavs: 'FAVS',
+    listFilterAi: 'AI',
+    listFilterTrend: 'TREND',
+    filterByMapArea: 'マップ範囲で絞込',
+    popularAiTrends: '人気のAIトレンド',
+    shortsSwipeHint: '上にスワイプで次の動画',
+    addressLabel: '住所',
+    hoursLabel: '営業時間',
+    officialSiteLabel: '公式サイト',
+    spotNoteLabel: '店舗メモ',
+    noAddressData: '住所情報はまだ登録されていません。',
+    noHoursData: '営業時間は未登録です。',
+    defaultShortDescription: 'このSpotに登録されたショート動画です。',
+    spotInfoLabel: '店舗情報',
+    notAddedYet: '未登録',
+    milzVideoLabel: 'MILZ VIDEO',
+    videoUnavailable: '動画を再生できません',
+    openLink: 'リンクを開く',
+    aiViewRecommend: 'AIレコメンド',
+    aiViewTrend: 'AIウィークリートレンド',
+    locationFilterLabel: 'ロケーションフィルター',
+    selectRegion: '地域を選択',
+    trendAreaHint: 'AI Weekly Trendは都市(Area)単位で集計されます。',
+    regionSwitchHint: 'Regionを切り替えると、MapとAIの対象地域も切り替わります。',
+    walkRadiusLabel: '徒歩半径',
+    milzAiButton: 'Milz AI',
+    aiTrendLabel: 'AIトレンド',
+    morePicks: '別の10件を見る',
+    linkButton: 'リンク',
+    aiWeeklyTrendEyebrow: 'AI 週間トレンドスポット',
+    scoreLabel: 'スコア',
+    removeFavorite: 'お気に入りから外す',
+    searchLabel: '検索',
+    viewDetailLabel: '詳細を見る',
+    nothingSavedYet: 'まだ保存されていません',
+    viewMore: '一覧を見る',
+    noAiTrendFavs: 'AIトレンドのお気に入りはまだありません。',
+    aiTrendFavHint: 'AIタブのAIトレンドからハートで保存できます。',
   },
   en: {
     map: 'MAP',
@@ -2257,9 +2319,106 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     shortsHint: 'Registered YouTube Shorts will appear here in a swipe-style feed.',
     openSpot: 'Spot Details',
     backToAi: 'Back to AI',
+    mapSearchPlaceholder: 'Search spots...',
+    filterSettings: 'Filter & Settings',
+    areaLabel: 'Area',
+    cityWardLabel: 'City / Ward',
+    drivenByStation: '(driven by station)',
+    allWardsOption: 'All wards',
+    stationLabel: 'Station',
+    allStationsOption: 'All stations',
+    categoriesLabel: 'Categories',
+    allCategoriesOption: 'All',
+    badgesLabel: 'Badges',
+    allBadgesOption: 'All',
+    aiTrendFavLabel: 'AI Trend Fav',
+    showAiTrendFavDesc: 'Show AI trend favorites',
+    aiRecFavLabel: 'AI Recommendation Fav',
+    showAiRecFavDesc: 'Show AI recommendation favorites',
+    clearAllFilters: 'CLEAR ALL FILTERS',
+    backToSpots: 'Back to SPOTS',
+    listFilterHome: 'HOME',
+    listFilterAll: 'ALL',
+    listFilterFavs: 'FAVS',
+    listFilterAi: 'AI',
+    listFilterTrend: 'TREND',
+    filterByMapArea: 'Filter by map area',
+    popularAiTrends: 'Popular AI Trends',
+    shortsSwipeHint: 'Swipe up for next',
+    addressLabel: 'Address',
+    hoursLabel: 'Hours',
+    officialSiteLabel: 'Official Site',
+    spotNoteLabel: 'Spot Note',
+    noAddressData: 'Address details have not been added yet.',
+    noHoursData: 'Hours have not been added yet.',
+    defaultShortDescription: 'A short video registered for this spot.',
+    spotInfoLabel: 'Spot Info',
+    notAddedYet: 'Not added yet',
+    milzVideoLabel: 'MILZ VIDEO',
+    videoUnavailable: 'Video unavailable',
+    openLink: 'Open Link',
+    aiViewRecommend: 'AI Recommendation',
+    aiViewTrend: 'AI Weekly Trend',
+    locationFilterLabel: 'Location Filter',
+    selectRegion: 'Select a region',
+    trendAreaHint: 'AI Weekly Trend aggregates spots by area.',
+    regionSwitchHint: 'Switching the region also updates the target area for Map and AI.',
+    walkRadiusLabel: 'Walk radius',
+    milzAiButton: 'Milz AI',
+    aiTrendLabel: 'AI Trend',
+    morePicks: 'More picks',
+    linkButton: 'Link',
+    aiWeeklyTrendEyebrow: 'AI Weekly Trend SPOTS',
+    scoreLabel: 'Score',
+    removeFavorite: 'Remove favorite',
+    searchLabel: 'Search',
+    viewDetailLabel: 'VIEW DETAIL',
+    nothingSavedYet: 'Nothing saved yet',
+    viewMore: 'View more',
+    noAiTrendFavs: 'No AI trend favorites yet.',
+    aiTrendFavHint: 'Save from the AI Trends section in the AI tab.',
   },
 };
 
+
+const CATEGORY_LABEL_MAP: Record<string, { jp: string; en: string }> = {
+  'レストラン': { jp: 'レストラン', en: 'Restaurant' },
+  'カフェ': { jp: 'カフェ', en: 'Cafe' },
+  'ショッピング': { jp: 'ショッピング', en: 'Shopping' },
+  'エンターテイメント': { jp: 'エンターテイメント', en: 'Entertainment' },
+  'エンタメ': { jp: 'エンタメ', en: 'Entertainment' },
+  '公園・自然': { jp: '公園・自然', en: 'Park / Nature' },
+  '公園': { jp: '公園', en: 'Park' },
+  '自然': { jp: '自然', en: 'Nature' },
+  '神社・寺院': { jp: '神社・寺院', en: 'Shrine / Temple' },
+  '神社': { jp: '神社', en: 'Shrine' },
+  '寺院': { jp: '寺院', en: 'Temple' },
+  '駅・交通': { jp: '駅・交通', en: 'Station / Transit' },
+  '駐車場': { jp: '駐車場', en: 'Parking' },
+  '学校': { jp: '学校', en: 'School' },
+  'コンビニ': { jp: 'コンビニ', en: 'Convenience Store' },
+  'ホテル': { jp: 'ホテル', en: 'Hotel' },
+  'バー': { jp: 'バー', en: 'Bar' },
+  'ギャラリー': { jp: 'ギャラリー', en: 'Gallery' },
+  '美術館': { jp: '美術館', en: 'Museum' },
+  'その他': { jp: 'その他', en: 'Other' },
+  'restaurant': { jp: 'レストラン', en: 'Restaurant' },
+  'cafe': { jp: 'カフェ', en: 'Cafe' },
+  'shop': { jp: 'ショッピング', en: 'Shop' },
+  'shopping': { jp: 'ショッピング', en: 'Shopping' },
+  'nature': { jp: '自然', en: 'Nature' },
+  'park': { jp: '公園', en: 'Park' },
+  'entertainment': { jp: 'エンターテイメント', en: 'Entertainment' },
+  'other': { jp: 'その他', en: 'Other' },
+};
+
+const localizeCategory = (category: string | undefined | null, locale: Locale): string => {
+  if (!category) return '';
+  const trimmed = category.trim();
+  const entry = CATEGORY_LABEL_MAP[trimmed] || CATEGORY_LABEL_MAP[trimmed.toLowerCase()];
+  if (entry) return entry[locale];
+  return trimmed;
+};
 
 const AI_RECOMMENDATION_POOL_SIZE = 30;
 const AI_RECOMMENDATION_VISIBLE_COUNT = 10;
@@ -6177,7 +6336,7 @@ Return ONLY valid JSON matching the schema.`;
                     <Search className="w-4 h-4 text-stone-400 mr-4" />
                     <input
                       type="text"
-                      placeholder="Search spots..."
+                      placeholder={t('mapSearchPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="bg-transparent border-none outline-none text-sm font-medium w-full placeholder:text-stone-300"
@@ -6185,7 +6344,7 @@ Return ONLY valid JSON matching the schema.`;
                   </div>
                   <button
                     onClick={() => setIsFiltering(!isFiltering)}
-                    title="Filter & Settings"
+                    title={t('filterSettings')}
                     className={cn(
                       "p-4 shadow-xl rounded-2xl glass transition-all active:scale-95",
                       isFiltering 
@@ -6218,11 +6377,11 @@ Return ONLY valid JSON matching the schema.`;
                       <div className="space-y-6">
                         <div className="flex items-center gap-3 mb-2">
                           <SlidersHorizontal className="w-4 h-4 text-black" />
-                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black">Filter & Settings</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black">{t('filterSettings')}</span>
                         </div>
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Area</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('areaLabel')}</p>
                           <div className="flex flex-wrap gap-2">
                             {areaOptions.map((area) => (
                               <button
@@ -6242,7 +6401,7 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">City / Ward {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">(driven by station)</span>}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('cityWardLabel')} {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">{t('drivenByStation')}</span>}</p>
                           <select
                             value={selectedStation ? '' : locationFilter.cityName}
                             onChange={(e) => {
@@ -6254,7 +6413,7 @@ Return ONLY valid JSON matching the schema.`;
                               selectedStation && "opacity-60"
                             )}
                           >
-                            <option value="">All wards</option>
+                            <option value="">{t('allWardsOption')}</option>
                             {areaCityOptions.map((city) => (
                               <option key={city.name} value={city.name}>{city.name}{city.name_jp ? ` ${city.name_jp}` : ''}</option>
                             ))}
@@ -6263,7 +6422,7 @@ Return ONLY valid JSON matching the schema.`;
 
                         {currentAreaStations.length > 0 && (
                           <div className="space-y-4">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Station</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('stationLabel')}</p>
                             <select
                               value={selectedStationId}
                               onChange={(e) => {
@@ -6274,7 +6433,7 @@ Return ONLY valid JSON matching the schema.`;
                               }}
                               className="w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium"
                             >
-                              <option value="">All stations</option>
+                              <option value="">{t('allStationsOption')}</option>
                               {currentAreaStations.map((s) => (
                                 <option key={s.id} value={s.id}>
                                   {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
@@ -6303,7 +6462,7 @@ Return ONLY valid JSON matching the schema.`;
                         )}
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Categories</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('categoriesLabel')}</p>
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => setSelectedCategory('all')}
@@ -6312,7 +6471,7 @@ Return ONLY valid JSON matching the schema.`;
                                 selectedCategory === 'all' ? "bg-black text-white border-black" : "text-stone-400 border-stone-100 hover:border-stone-200"
                               )}
                             >
-                              All
+                              {t('allCategoriesOption')}
                             </button>
                             {categoryOptions.map((cat) => (
                               <button
@@ -6330,7 +6489,7 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Badges</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('badgesLabel')}</p>
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => setSelectedBadge('all')}
@@ -6339,7 +6498,7 @@ Return ONLY valid JSON matching the schema.`;
                                 selectedBadge === 'all' ? "bg-black text-white border-black" : "text-stone-400 border-stone-100 hover:border-stone-200"
                               )}
                             >
-                              All
+                              {t('allBadgesOption')}
                             </button>
                             {badgeOptions.map((badge) => (
                               <button
@@ -6357,12 +6516,12 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-4">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{locale === 'jp' ? 'AIお気に入り' : 'AI Favorites'}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('aiFavoritesTab')}</p>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
                               <div className="min-w-0">
-                                <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Trend Fav</p>
-                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIトレンドのお気に入りを表示' : 'Show AI trend favorites'}</p>
+                                <p className="text-[11px] font-black text-stone-900 tracking-wide">{t('aiTrendFavLabel')}</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{t('showAiTrendFavDesc')}</p>
                               </div>
                               <button
                                 type="button"
@@ -6382,8 +6541,8 @@ Return ONLY valid JSON matching the schema.`;
                             </div>
                             <div className="flex items-center justify-between gap-3 px-4 py-3 bg-stone-50 rounded-2xl border border-stone-100">
                               <div className="min-w-0">
-                                <p className="text-[11px] font-black text-stone-900 tracking-wide">AI Recommendation Fav</p>
-                                <p className="text-[10px] text-stone-400 mt-0.5">{locale === 'jp' ? 'AIおすすめのお気に入りを表示' : 'Show AI recommendation favorites'}</p>
+                                <p className="text-[11px] font-black text-stone-900 tracking-wide">{t('aiRecFavLabel')}</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{t('showAiRecFavDesc')}</p>
                               </div>
                               <button
                                 type="button"
@@ -6416,7 +6575,7 @@ Return ONLY valid JSON matching the schema.`;
                             }}
                             className="w-full py-3 text-[10px] font-black text-stone-400 hover:text-stone-900 transition-colors"
                           >
-                            {locale === 'jp' ? 'フィルターをクリア' : 'CLEAR ALL FILTERS'}
+                            {t('clearAllFilters')}
                           </button>
                           <button
                             onClick={() => {
@@ -6696,7 +6855,7 @@ Return ONLY valid JSON matching the schema.`;
                     >
                       <Popup>
                         <div className="p-2 min-w-[180px]">
-                          <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-1">Station</div>
+                          <div className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-1">{t('stationLabel')}</div>
                           <div className="font-black text-black tracking-tight">
                             {selectedStation.name_jp || selectedStation.name}
                           </div>
@@ -6736,13 +6895,13 @@ Return ONLY valid JSON matching the schema.`;
                   className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:border-black hover:text-black transition-all"
                 >
                   <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                  {locale === 'jp' ? 'SPOTSへ戻る' : 'Back to SPOTS'}
+                  {t('backToSpots')}
                 </button>
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                   <input
                     type="text"
-                    placeholder="Search spots..."
+                    placeholder={t('mapSearchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-lg text-sm font-medium focus:border-black outline-none transition-all shadow-sm"
@@ -6785,7 +6944,7 @@ Return ONLY valid JSON matching the schema.`;
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 md:px-6 bg-white border border-stone-200 rounded-xl shadow-sm">
                   <div className="flex items-center gap-3">
                     <MapIcon className="w-5 h-5 text-stone-400" />
-                    <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Filter by map area</span>
+                    <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('filterByMapArea')}</span>
                   </div>
                   <button 
                     onClick={() => setIsMapBoundsFilterEnabled(!isMapBoundsFilterEnabled)}
@@ -6807,7 +6966,7 @@ Return ONLY valid JSON matching the schema.`;
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-rose-500" />
                     <h3 className="text-[11px] font-black uppercase tracking-[0.22em] text-black">
-                      {locale === 'jp' ? '人気のAIトレンド' : 'Popular AI Trends'}
+                      {t('popularAiTrends')}
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -7112,7 +7271,7 @@ Return ONLY valid JSON matching the schema.`;
                                   onClick={() => setListFilter('all')}
                                   className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.3em] text-black hover:border-black hover:bg-stone-50 transition-all"
                                 >
-                                  {locale === 'jp' ? '一覧を見る' : 'View more'}
+                                  {t('viewMore')}
                                   <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                               </div>
@@ -7163,7 +7322,7 @@ Return ONLY valid JSON matching the schema.`;
 
                         {activeFav.count === 0 ? (
                           <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/60 px-4 py-8 text-center text-xs font-medium text-stone-400">
-                            {locale === 'jp' ? 'まだ保存されていません' : 'Nothing saved yet'}
+                            {t('nothingSavedYet')}
                           </div>
                         ) : (
                           <>
@@ -7175,7 +7334,7 @@ Return ONLY valid JSON matching the schema.`;
                                   onClick={() => setListFilter(activeFav.target)}
                                   className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.3em] text-black hover:border-black hover:bg-stone-50 transition-all"
                                 >
-                                  {locale === 'jp' ? '一覧を見る' : 'View more'}
+                                  {t('viewMore')}
                                   <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                               </div>
@@ -7267,10 +7426,10 @@ Return ONLY valid JSON matching the schema.`;
                     <div className="col-span-full bg-white border border-stone-100 rounded-[2rem] shadow-sm px-8 py-14 text-center space-y-3">
                       <Heart className="w-8 h-8 mx-auto text-stone-200" />
                       <p className="text-sm font-black text-stone-500 uppercase tracking-[0.2em]">
-                        {locale === 'jp' ? 'AIトレンドのお気に入りはまだありません。' : 'No AI trend favorites yet.'}
+                        {t('noAiTrendFavs')}
                       </p>
                       <p className="text-sm text-stone-400">
-                        {locale === 'jp' ? 'AIタブのAIトレンドからハートで保存できます。' : 'Save from the AI Trends section in the AI tab.'}
+                        {t('aiTrendFavHint')}
                       </p>
                     </div>
                   )
@@ -7446,8 +7605,8 @@ Return ONLY valid JSON matching the schema.`;
                     {/* AI View Toggle */}
                     <div className="bg-white p-2 rounded-full border border-stone-100 shadow-sm flex items-center gap-1">
                       {([
-                        { key: 'recommend', label: 'AI Recommendation' },
-                        { key: 'trend', label: 'AI Weekly Trend' },
+                        { key: 'recommend', label: t('aiViewRecommend') },
+                        { key: 'trend', label: t('aiViewTrend') },
                       ] as const).map((tab) => (
                         <button
                           key={tab.key}
@@ -7470,21 +7629,19 @@ Return ONLY valid JSON matching the schema.`;
                       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
                         <div className="space-y-1">
                           <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
-                            {aiView === 'trend' ? 'AREA FILTER' : 'ロケーションフィルター'}
+                            {aiView === 'trend' ? (locale === 'jp' ? 'エリアフィルター' : 'AREA FILTER') : t('locationFilterLabel')}
                           </p>
                           <h3 className="text-2xl font-black text-black tracking-tight">
-                            {aiView === 'trend' ? 'Select a region' : 'Active region'}
+                            {aiView === 'trend' ? t('selectRegion') : t('activeRegion')}
                           </h3>
                         </div>
                         <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                          {aiView === 'trend'
-                            ? 'AI Weekly Trend は都市(Area)単位で集計されます。'
-                            : 'Regionを切り替えると、MapとAIの対象地域も切り替わります。'}
+                          {aiView === 'trend' ? t('trendAreaHint') : t('regionSwitchHint')}
                         </p>
                       </div>
 
                       <div className="space-y-4">
-                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Area</label>
+                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('areaLabel')}</label>
                         <div className="flex flex-wrap gap-3">
                           {areaOptions.map((area) => (
                             <button
@@ -7507,7 +7664,7 @@ Return ONLY valid JSON matching the schema.`;
                       {aiView === 'recommend' && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Area</label>
+                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('areaLabel')}</label>
                           <select
                             value={locationFilter.areaKey}
                             onChange={(e) => setLocationFilter(createLocationFilterFromArea(e.target.value, getAreaCityOptions(e.target.value)[0]?.name))}
@@ -7520,7 +7677,7 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">City / Ward {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">(driven by station)</span>}</label>
+                          <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('cityWardLabel')} {selectedStation && <span className="ml-2 text-stone-300 normal-case tracking-normal">{t('drivenByStation')}</span>}</label>
                           <select
                             value={selectedStation ? '' : locationFilter.cityName}
                             onChange={(e) => {
@@ -7532,7 +7689,7 @@ Return ONLY valid JSON matching the schema.`;
                               selectedStation && "opacity-60"
                             )}
                           >
-                            <option value="">All wards</option>
+                            <option value="">{t('allWardsOption')}</option>
                             {areaCityOptions.map((city) => (
                               <option key={city.name} value={city.name}>{city.name}{city.name_jp ? ` ${city.name_jp}` : ''}</option>
                             ))}
@@ -7544,7 +7701,7 @@ Return ONLY valid JSON matching the schema.`;
                       {aiView === 'recommend' && currentAreaStations.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Station</label>
+                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('stationLabel')}</label>
                             <select
                               value={selectedStationId}
                               onChange={(e) => {
@@ -7555,7 +7712,7 @@ Return ONLY valid JSON matching the schema.`;
                               }}
                               className="w-full px-8 py-5 bg-stone-50 border border-stone-100 rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm"
                             >
-                              <option value="">All stations</option>
+                              <option value="">{t('allStationsOption')}</option>
                               {currentAreaStations.map((s) => (
                                 <option key={s.id} value={s.id}>
                                   {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
@@ -7564,7 +7721,7 @@ Return ONLY valid JSON matching the schema.`;
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">Walk radius</label>
+                            <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('walkRadiusLabel')}</label>
                             <div className="flex flex-wrap gap-2 pt-2">
                               {STATION_RADIUS_OPTIONS.map((opt) => (
                                 <button
@@ -7601,7 +7758,7 @@ Return ONLY valid JSON matching the schema.`;
                         className="w-full p-6 md:p-10 bg-[#1A1A1A] text-white font-black rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center gap-3 md:gap-4 shadow-2xl active:scale-95 transition-all disabled:opacity-50 tracking-[0.25em] md:tracking-[0.4em] text-[11px] md:text-xs hover:bg-black group"
                       >
                         {aiLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" />}
-                        Milz AI
+                        {t('milzAiButton')}
                       </button>
                     </div>
 
@@ -7644,7 +7801,7 @@ Return ONLY valid JSON matching the schema.`;
                                       onClick={() => setAiEditPage((prev) => (prev + 1) % aiRecommendationPageCount)}
                                       className="rounded-full border border-stone-200 bg-white px-4 py-2 text-black hover:border-black transition-all"
                                     >
-                                      {locale === 'jp' ? '別の10件を見る' : 'More picks'}
+                                      {t('morePicks')}
                                     </button>
                                   )}
                                 </div>
@@ -7936,7 +8093,7 @@ Return ONLY valid JSON matching the schema.`;
                     >
                       <ChevronUp className="w-4 h-4 text-white" strokeWidth={2.5} />
                       <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white">
-                        {locale === 'jp' ? '上にスワイプで次の動画' : 'Swipe up for next'}
+                        {t('shortsSwipeHint')}
                       </span>
                     </motion.div>
                   </motion.div>
@@ -7954,14 +8111,14 @@ Return ONLY valid JSON matching the schema.`;
                 shortsFeed.map((item) => {
                   const isPlaceFav = favorites.some((f) => f.place_id === item.placeId);
                   const websiteLabel = formatWebsiteLabel(item.websiteUrl);
-                  const addressLabel = locale === 'jp' ? '住所' : 'Address';
-                  const hoursLabel = locale === 'jp' ? '営業時間' : 'Hours';
-                  const websiteText = locale === 'jp' ? '公式サイト' : 'Official Site';
-                  const summaryLabel = locale === 'jp' ? '店舗メモ' : 'Spot Note';
-                  const addressValue = item.address || (locale === 'jp' ? '住所情報はまだ登録されていません。' : 'Address details have not been added yet.');
-                  const hoursValue = item.hours || (locale === 'jp' ? '営業時間は未登録です。' : 'Hours have not been added yet.');
-                  const descriptionValue = item.description || (locale === 'jp' ? 'このSpotに登録されたショート動画です。' : 'A short video registered for this spot.');
-                  const spotInfoLabel = locale === 'jp' ? '店舗情報' : 'Spot Info';
+                  const addressLabel = t('addressLabel');
+                  const hoursLabel = t('hoursLabel');
+                  const websiteText = t('officialSiteLabel');
+                  const summaryLabel = t('spotNoteLabel');
+                  const addressValue = item.address || t('noAddressData');
+                  const hoursValue = item.hours || t('noHoursData');
+                  const descriptionValue = item.description || t('defaultShortDescription');
+                  const spotInfoLabel = t('spotInfoLabel');
                   const isShortInfoOpen = expandedShortInfoId === item.id;
 
                   const compactInfoPanel = (
@@ -7970,9 +8127,16 @@ Return ONLY valid JSON matching the schema.`;
                         <div className="flex flex-wrap items-center justify-center xl:justify-start gap-2 text-[9px] font-black uppercase tracking-[0.3em] text-white/45">
                           <span>MILZ SHORTS</span>
                           <span className="h-1 w-1 rounded-full bg-white/25" />
-                          <span>{item.category}</span>
+                          <span>{localizeCategory(item.category, locale)}</span>
                         </div>
                         <h2 className="text-[2rem] sm:text-[2.4rem] xl:text-[3rem] font-black leading-[0.92] tracking-tight">{item.placeName}</h2>
+                        {(() => {
+                          const alt = localizeCategory(item.category, locale === 'jp' ? 'en' : 'jp');
+                          const primary = localizeCategory(item.category, locale);
+                          return alt && alt !== primary ? (
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">{alt}</p>
+                          ) : null;
+                        })()}
                         <p className="text-[13px] leading-relaxed text-white/62">{descriptionValue}</p>
                       </div>
 
@@ -8008,7 +8172,7 @@ Return ONLY valid JSON matching the schema.`;
                               {websiteText}
                             </div>
                             <p className="text-[13px] font-semibold text-white/88 break-all">
-                              {websiteLabel || (locale === 'jp' ? '未登録' : 'Not added yet')}
+                              {websiteLabel || t('notAddedYet')}
                             </p>
                           </div>
                           {item.websiteUrl ? (
@@ -8062,8 +8226,8 @@ Return ONLY valid JSON matching the schema.`;
                                   <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-4 bg-stone-950">
                                     <Video className="w-10 h-10 text-white/70" />
                                     <div className="space-y-2">
-                                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">MILZ VIDEO</p>
-                                      <p className="text-sm font-semibold text-white/90">Video unavailable</p>
+                                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">{t('milzVideoLabel')}</p>
+                                      <p className="text-sm font-semibold text-white/90">{t('videoUnavailable')}</p>
                                     </div>
                                     <a
                                       href={item.url}
@@ -8072,14 +8236,14 @@ Return ONLY valid JSON matching the schema.`;
                                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.22em] text-white hover:border-white/45 hover:bg-white/5 transition-all"
                                     >
                                       <ExternalLink className="w-4 h-4" />
-                                      Open Link
+                                      {t('openLink')}
                                     </a>
                                   </div>
                                 )}
                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/70 to-transparent" />
                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 space-y-1.5">
                                   <div className="inline-flex items-center rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.28em] text-white/70 backdrop-blur-sm">
-                                    {item.category}
+                                    {localizeCategory(item.category, locale)}
                                   </div>
                                   <h3 className="text-xl md:text-2xl font-black leading-tight text-white">{item.placeName}</h3>
                                 </div>

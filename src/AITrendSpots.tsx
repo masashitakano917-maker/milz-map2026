@@ -541,6 +541,8 @@ const COPY = {
     empty: 'この地域のAIトレンドはまだ取得されていません。',
     loading: '読み込み中',
     signInNeeded: 'ログインすると推薦できます',
+    trendHeaderEyebrow: 'AI 週間トレンドスポット',
+    linkButton: 'リンク',
   },
   en: {
     eyebrow: 'AI TREND SPOTS',
@@ -560,6 +562,8 @@ const COPY = {
     empty: 'No AI trend data yet for this region.',
     loading: 'Loading',
     signInNeeded: 'Sign in to suggest',
+    trendHeaderEyebrow: 'AI Weekly Trend SPOTS',
+    linkButton: 'Link',
   },
 } as const;
 
@@ -765,7 +769,7 @@ export default function AITrendSpots({ areaKey, locale, userId, onShowOnMap }: P
           <div className="flex items-center gap-2">
             <TrendingUp className="w-3 h-3 text-stone-400" />
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
-              {locale === 'jp' ? 'AI 週間トレンドスポット' : 'AI Weekly Trend SPOTS'}
+              {t.trendHeaderEyebrow}
             </p>
           </div>
         </div>
@@ -867,7 +871,7 @@ export default function AITrendSpots({ areaKey, locale, userId, onShowOnMap }: P
                         className="flex-1 inline-flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-500 hover:text-black py-2 rounded-full border border-stone-200 hover:border-black transition-all"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        Link
+                        {t.linkButton}
                       </a>
                     )}
                     <button
