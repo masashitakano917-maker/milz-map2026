@@ -3227,6 +3227,8 @@ function AppMain() {
   const [selectedAiFavoriteDetail, setSelectedAiFavoriteDetail] = useState<AiFavoriteItem | null>(null);
   const [selectedAiTrendDetail, setSelectedAiTrendDetail] = useState<AiTrendFavoriteRow | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [placeTranslationCache, setPlaceTranslationCache] = useState<Record<string, Record<string, any>>>({});
+  const [isTranslatingDetail, setIsTranslatingDetail] = useState(false);
 
   const openPlaceDetail = React.useCallback((target: Place | string | null | undefined) => {
     if (!target) {
@@ -3253,6 +3255,91 @@ function AppMain() {
   const [isEditingDetail, setIsEditingDetail] = useState(false);
   const [editDetailForm, setEditDetailForm] = useState<Partial<Place>>({});
   const [isUpdatingDetail, setIsUpdatingDetail] = useState(false);
+
+  useEffect(() => {
+    if (!selectedPlaceForDetail) return;
+    if (locale !== 'en') return;
+    const placeId = selectedPlaceForDetail.id;
+    const cacheKey = `${placeId}:${locale}`;
+    if (placeTranslationCache[cacheKey]) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const client = getSupabase();
+        if (!client) return;
+
+        const { data: cached } = await client
+          .from('place_translations')
+          .select('fields')
+          .eq('place_id', placeId)
+          .eq('locale', locale)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (cached?.fields && Object.keys(cached.fields).length > 0) {
+          setPlaceTranslationCache((prev) => ({ ...prev, [cacheKey]: cached.fields }));
+          return;
+        }
+
+        setIsTranslatingDetail(true);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+        let token = anonKey;
+        try {
+          const { data } = await client.auth.getSession();
+          if (data?.session?.access_token) token = data.session.access_token;
+        } catch {}
+
+        const resp = await fetch(`${supabaseUrl}/functions/v1/translate-place`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'apikey': anonKey,
+          },
+          body: JSON.stringify({ place_id: placeId, target_locale: locale }),
+        });
+
+        if (cancelled) return;
+
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json?.fields) {
+            setPlaceTranslationCache((prev) => ({ ...prev, [cacheKey]: json.fields }));
+          }
+        }
+      } catch (err) {
+        console.error('place translation load failed:', err);
+      } finally {
+        if (!cancelled) setIsTranslatingDetail(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlaceForDetail, locale, placeTranslationCache]);
+
+  const placeTranslation = React.useMemo(() => {
+    if (!selectedPlaceForDetail) return null;
+    if (locale !== 'en') return null;
+    return placeTranslationCache[`${selectedPlaceForDetail.id}:${locale}`] || null;
+  }, [selectedPlaceForDetail, locale, placeTranslationCache]);
+
+  const tPlace = React.useCallback((field: string, fallback?: string | null | undefined): string => {
+    const cached = placeTranslation?.[field];
+    if (typeof cached === 'string' && cached.trim()) return cached;
+    return (fallback ?? '') as string;
+  }, [placeTranslation]);
+
+  const tPlaceFromSpotItems = React.useMemo(() => {
+    const items = placeTranslation?.from_spot_items;
+    if (!Array.isArray(items)) return null;
+    return items;
+  }, [placeTranslation]);
   const [isMapBoundsFilterEnabled, setIsMapBoundsFilterEnabled] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [listFilter, setListFilter] = useState<'home' | 'all' | 'favorites' | 'ai_favorites' | 'ai_trends'>('home');
@@ -9606,7 +9693,12 @@ Return ONLY valid JSON matching the schema.`;
                             />
                           ) : (
                             <p className="text-xl md:text-2xl font-medium text-stone-800 leading-[1.7]">
-                              {selectedPlaceForDetail.milz_experience || selectedPlaceForDetail.detailed_description || selectedPlaceForDetail.description}
+                              {tPlace('milz_experience', selectedPlaceForDetail.milz_experience)
+                                || selectedPlaceForDetail.milz_experience
+                                || tPlace('detailed_description', selectedPlaceForDetail.detailed_description)
+                                || selectedPlaceForDetail.detailed_description
+                                || tPlace('description', selectedPlaceForDetail.description)
+                                || selectedPlaceForDetail.description}
                             </p>
                           )}
                         </div>
@@ -9765,7 +9857,7 @@ Return ONLY valid JSON matching the schema.`;
                               />
                             ) : (
                               <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight text-black leading-[0.9]">
-                                {selectedPlaceForDetail.from_spot_heading || fromSpotHeadingDefault}
+                                {tPlace('from_spot_heading', selectedPlaceForDetail.from_spot_heading) || selectedPlaceForDetail.from_spot_heading || fromSpotHeadingDefault}
                               </h2>
                             )}
                           </div>
@@ -9800,7 +9892,7 @@ Return ONLY valid JSON matching the schema.`;
                             />
                           ) : (
                             <p className="text-sm text-stone-500 leading-relaxed font-medium">
-                              {selectedPlaceForDetail.from_spot_intro || fromSpotIntroDefault}
+                              {tPlace('from_spot_intro', selectedPlaceForDetail.from_spot_intro) || selectedPlaceForDetail.from_spot_intro || fromSpotIntroDefault}
                             </p>
                           )}
                         </div>
@@ -9878,11 +9970,21 @@ Return ONLY valid JSON matching the schema.`;
                                     </>
                                   ) : (
                                     <>
-                                      <div className="space-y-3">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">{item.subtitle || (locale === 'jp' ? 'FROM THE SPOT' : 'FROM THE SPOT')}</p>
-                                        <h3 className="font-display text-3xl md:text-4xl uppercase tracking-tight text-black leading-[0.95]">{item.title}</h3>
-                                      </div>
-                                      <p className="text-base leading-relaxed text-stone-600 whitespace-pre-line">{item.description}</p>
+                                      {(() => {
+                                        const translatedItem = tPlaceFromSpotItems?.[index] || {};
+                                        const displaySubtitle = (translatedItem.subtitle as string) || item.subtitle;
+                                        const displayTitle = (translatedItem.title as string) || item.title;
+                                        const displayDescription = (translatedItem.description as string) || item.description;
+                                        return (
+                                          <>
+                                            <div className="space-y-3">
+                                              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">{displaySubtitle || 'FROM THE SPOT'}</p>
+                                              <h3 className="font-display text-3xl md:text-4xl uppercase tracking-tight text-black leading-[0.95]">{displayTitle}</h3>
+                                            </div>
+                                            <p className="text-base leading-relaxed text-stone-600 whitespace-pre-line">{displayDescription}</p>
+                                          </>
+                                        );
+                                      })()}
                                     </>
                                   )}
                                 </div>
@@ -10166,7 +10268,10 @@ Return ONLY valid JSON matching the schema.`;
                             />
                           ) : (
                             <p className="text-sm font-bold text-black leading-relaxed">
-                              {selectedPlaceForDetail.address || 'Address not provided'}
+                              {tPlace('address', selectedPlaceForDetail.address) || selectedPlaceForDetail.address || (locale === 'jp' ? '住所情報なし' : 'Address not provided')}
+                              {isTranslatingDetail && !placeTranslation && locale === 'en' && selectedPlaceForDetail.address && (
+                                <span className="ml-2 text-[10px] font-black tracking-widest text-stone-400 uppercase">Translating...</span>
+                              )}
                             </p>
                           )}
                         </div>
@@ -10193,7 +10298,7 @@ Return ONLY valid JSON matching the schema.`;
                             />
                           ) : (
                             <p className="text-sm font-bold text-black whitespace-pre-line leading-relaxed">
-                              {selectedPlaceForDetail.hours || 'Mon-Sun: 10:00 - 22:00'}
+                              {tPlace('hours', selectedPlaceForDetail.hours) || selectedPlaceForDetail.hours || 'Mon-Sun: 10:00 - 22:00'}
                             </p>
                           )}
                         </div>
