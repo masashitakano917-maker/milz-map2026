@@ -6763,46 +6763,29 @@ Return ONLY valid JSON matching the schema.`;
                       icon={getCustomIcon(place.category, mapStyle)}
                     >
                       <Popup className="custom-popup">
-                        <div className="p-0 min-w-[260px] overflow-hidden">
-                          {place.image_url && (
-                            <div className="aspect-[16/10] w-full overflow-hidden relative group">
-                              <img src={place.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" referrerPolicy="no-referrer" />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            </div>
-                          )}
-                          <div className="p-5 space-y-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="space-y-1.5">
-                                <h3 className="font-serif italic text-xl text-black leading-tight m-0">{place.name}</h3>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-[0.1em]">
-                                    {place.category}
-                                  </span>
-                                </div>
+                        <div className="p-0 w-[260px] overflow-hidden bg-white">
+                          <div className="px-5 py-6 flex flex-col items-center text-center gap-3">
+                            <span className="font-cond text-[10px] uppercase tracking-[0.28em] text-black border border-black px-2 py-0.5">N° 01 — MILZ SPOT</span>
+                            <h3 className="font-display text-[28px] leading-[0.92] tracking-tight text-black uppercase m-0 break-words">{place.name}</h3>
+                            <span className="block h-px w-10 bg-black/60" />
+                            {place.category && (
+                              <div className="font-cond text-[11px] uppercase tracking-[0.28em] text-black">
+                                ★ {place.category} ★
                               </div>
-                              <button 
-                                onClick={() => handleToggleFavorite(place.id)}
-                                className={cn(
-                                  "p-2.5 rounded-full transition-all active:scale-90 glass",
-                                  favorites.some(f => f.place_id === place.id) ? "text-rose-500 border-rose-100 bg-rose-50/50" : "text-stone-300 hover:text-stone-600"
-                                )}
-                              >
-                                <Heart className={cn("w-4 h-4", favorites.some(f => f.place_id === place.id) && "fill-current")} />
-                              </button>
-                            </div>
-                            
-                            <p className="text-[11px] text-stone-500 leading-relaxed font-normal line-clamp-2 m-0">{place.description}</p>
-                            
-                            <div className="pt-1">
-                              <button 
-                                type="button"
-                                onClick={() => openPlaceDetail(place)}
-                                className="w-full py-3 bg-black text-white text-[10px] font-bold uppercase tracking-[0.15em] rounded-xl flex items-center justify-center gap-2 hover:bg-stone-800 transition-all active:scale-[0.98]"
-                              >
-                                Details
-                                <ArrowUpRight className="w-3 h-3" />
-                              </button>
-                            </div>
+                            )}
+                            {place.address && (
+                              <div className="text-[11px] leading-relaxed text-stone-500 font-medium whitespace-pre-line break-words">
+                                {place.address}
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openPlaceDetail(place)}
+                              className="mt-2 w-full py-3 bg-black text-white font-cond text-[11px] font-extrabold uppercase tracking-[0.28em] flex items-center justify-center gap-2 hover:bg-stone-800 transition-all active:scale-[0.98]"
+                            >
+                              Details
+                              <ArrowUpRight className="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       </Popup>
