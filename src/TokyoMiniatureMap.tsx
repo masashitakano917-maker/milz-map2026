@@ -561,18 +561,17 @@ export default function TokyoMiniatureMap({
 
         activePopupRef.current?.remove?.();
 
-        const thumb = place.image_url || place.images?.[0] || '';
-        const descRaw = (place.description || '').trim();
-        const descTrimmed = descRaw.length > 90 ? descRaw.slice(0, 90) + '…' : descRaw;
+        const addressRaw = (place.address || '').trim();
 
         const popupEl = document.createElement('div');
         popupEl.className = 'milz-map-popup';
         popupEl.innerHTML = `
-          ${thumb ? `<div class="milz-map-popup__thumb"><img src="${escapeHtml(thumb)}" alt="" referrerpolicy="no-referrer" /></div>` : ''}
           <div class="milz-map-popup__body">
-            <div class="milz-map-popup__category">${escapeHtml(place.category || '')}</div>
+            <div class="milz-map-popup__issue">N° 01 — MILZ SPOT</div>
             <div class="milz-map-popup__title">${escapeHtml(place.name || '')}</div>
-            ${descTrimmed ? `<div class="milz-map-popup__desc">${escapeHtml(descTrimmed)}</div>` : ''}
+            <div class="milz-map-popup__rule"></div>
+            ${place.category ? `<div class="milz-map-popup__category">★ ${escapeHtml(place.category)} ★</div>` : ''}
+            ${addressRaw ? `<div class="milz-map-popup__address">${escapeHtml(addressRaw)}</div>` : ''}
             <button type="button" class="milz-map-popup__cta">DETAILS</button>
           </div>
         `;
