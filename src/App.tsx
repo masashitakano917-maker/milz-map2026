@@ -5675,13 +5675,12 @@ function AppMain() {
     }
 
     const placeAreaKey = rec.area_key || resolvePlaceAreaKey({ lat: normalized.lat, lng: normalized.lng, municipality: rec.municipality, address: rec.address });
-    const placeCityName = resolvePlaceCityName({ municipality: rec.municipality, address: rec.address }, placeAreaKey);
 
     setLocationFilter((prev) => {
-      if (prev.areaKey === placeAreaKey && (!placeCityName || prev.cityName === placeCityName || !prev.cityName)) {
-        return prev;
+      if (prev.areaKey === placeAreaKey) {
+        return { ...prev, cityCode: '', cityName: '' };
       }
-      return createLocationFilterFromArea(placeAreaKey, placeCityName || undefined);
+      return createLocationFilterFromArea(placeAreaKey);
     });
     setSelectedStationId('');
     setSearchQuery('');
@@ -6653,7 +6652,7 @@ Return ONLY valid JSON matching the schema.`;
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <button
                             onClick={() => {
-                              setLocationFilter(createLocationFilterFromArea('tokyo', 'Shibuya'));
+                              setLocationFilter(createLocationFilterFromArea('tokyo'));
                               setSelectedCategory('all');
                               setSelectedBadge('all');
                               setAiTrendFavFilter(true);
