@@ -9676,12 +9676,16 @@ Return ONLY valid JSON matching the schema.`;
 
                 {/* Content Grid */}
                 <div className="max-w-[1500px] mx-auto px-6 md:px-8 py-20 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20">
-                  
+
                   {/* Left Column: Story & Experience */}
-                  <div className="lg:col-span-8 space-y-32">
-                    
+                  <div className="lg:col-span-8 space-y-24">
+
                     {/* Milz Experience Section */}
-                    <section className="space-y-12">
+                    <section className="space-y-10 pt-2">
+                      <div className="flex items-center gap-3 text-stone-400">
+                        <span className="font-cond text-[10px] uppercase tracking-[0.45em]">Editorial</span>
+                        <span className="flex-1 h-px bg-black/10" />
+                      </div>
                       <div className="flex items-center gap-4">
                         <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 01</span>
                         {isEditingDetail ? (
@@ -9748,7 +9752,11 @@ Return ONLY valid JSON matching the schema.`;
                     </section>
 
                     {/* Photos Section */}
-                    <section className="space-y-12">
+                    <section className="relative space-y-10 -mx-6 md:-mx-10 px-6 md:px-10 py-16 md:py-20 bg-[#f7f5f0]">
+                      <div className="flex items-center gap-3 text-stone-400">
+                        <span className="font-cond text-[10px] uppercase tracking-[0.45em]">Gallery</span>
+                        <span className="flex-1 h-px bg-black/10" />
+                      </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 02</span>
@@ -9811,7 +9819,11 @@ Return ONLY valid JSON matching the schema.`;
 
                     {/* Short Videos Section */}
                     {(isEditingDetail || (selectedPlaceForDetail.videos && selectedPlaceForDetail.videos.length > 0)) && (
-                      <section className="space-y-12">
+                      <section className="space-y-10 pt-2">
+                        <div className="flex items-center gap-3 text-stone-400">
+                          <span className="font-cond text-[10px] uppercase tracking-[0.45em]">Motion</span>
+                          <span className="flex-1 h-px bg-black/10" />
+                        </div>
                         <div className="flex items-center gap-4">
                           <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 03</span>
                           {isEditingDetail ? (
@@ -9886,7 +9898,11 @@ Return ONLY valid JSON matching the schema.`;
 
                     {/* From the Spot Section */}
                     {(isEditingDetail || (selectedPlaceForDetail.from_spot_items && selectedPlaceForDetail.from_spot_items.length > 0)) && (
-                      <section className="space-y-12">
+                      <section className="relative space-y-10 -mx-6 md:-mx-10 px-6 md:px-10 py-16 md:py-20 bg-[#f7f5f0]">
+                        <div className="flex items-center gap-3 text-stone-400">
+                          <span className="font-cond text-[10px] uppercase tracking-[0.45em]">Neighbourhood</span>
+                          <span className="flex-1 h-px bg-black/10" />
+                        </div>
                         <div className="flex items-center justify-between gap-6 flex-wrap">
                           <div className="flex items-center gap-4">
                             <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 05</span>
@@ -10056,7 +10072,11 @@ Return ONLY valid JSON matching the schema.`;
                     )}
 
                     {/* Menu Section */}
-                    <section className="space-y-12">
+                    <section className="space-y-10 pt-2">
+                      <div className="flex items-center gap-3 text-stone-400">
+                        <span className="font-cond text-[10px] uppercase tracking-[0.45em]">Menu</span>
+                        <span className="flex-1 h-px bg-black/10" />
+                      </div>
                       <div className="flex items-center gap-4">
                         <span className="font-cond text-[13px] uppercase tracking-[0.25em] text-black border border-black px-3 py-1">N° 04</span>
                         {isEditingDetail ? (
@@ -10286,8 +10306,8 @@ Return ONLY valid JSON matching the schema.`;
                     <div className="sticky top-10 space-y-12">
                       
                       {/* Quick Info */}
-                      <div className="space-y-8 p-8 border border-black bg-[var(--gray-50)]">
-                        <div className="space-y-2">
+                      <div className="divide-y divide-black/10 p-8 border border-black bg-[var(--gray-50)]">
+                        <div className="space-y-2 pb-6 first:pt-0">
                           {isEditingDetail ? (
                             <input 
                               type="text"
@@ -10330,9 +10350,9 @@ Return ONLY valid JSON matching the schema.`;
                             </div>
                           )}
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 py-6">
                           {isEditingDetail ? (
-                            <input 
+                            <input
                               type="text"
                               value={editDetailForm.hours_label || 'Hours'}
                               onChange={(e) => setEditDetailForm({ ...editDetailForm, hours_label: e.target.value })}
@@ -10357,9 +10377,9 @@ Return ONLY valid JSON matching the schema.`;
                             </p>
                           )}
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 py-6">
                           {isEditingDetail ? (
-                            <input 
+                            <input
                               type="text"
                               value={editDetailForm.contact_label || 'Contact'}
                               onChange={(e) => setEditDetailForm({ ...editDetailForm, contact_label: e.target.value })}
@@ -10386,7 +10406,7 @@ Return ONLY valid JSON matching the schema.`;
                         </div>
                         
                         {!isEditingDetail && (
-                          <div className="pt-8 border-t border-stone-100 space-y-4">
+                          <div className="pt-6 space-y-4">
                             <button className="w-full py-4 bg-black text-white font-cond text-[13px] uppercase tracking-[0.25em] hover:bg-stone-800 transition-colors">
                               Book Experience
                             </button>
