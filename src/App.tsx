@@ -6764,34 +6764,54 @@ Return ONLY valid JSON matching the schema.`;
                     >
                       <Popup className="custom-popup">
                         <div className="relative p-0 w-[260px] overflow-hidden bg-black">
-                          {place.image_url && (
-                            <>
+                          {place.image_url ? (
+                            <div className="relative w-full aspect-[16/10] overflow-hidden bg-stone-900">
                               <img
                                 src={place.image_url}
-                                className="absolute inset-0 w-full h-full object-cover"
+                                className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"
                                 alt=""
                               />
-                              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black/80" />
-                            </>
+                              <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/55 to-transparent" />
+                              <button
+                                onClick={() => handleToggleFavorite(place.id)}
+                                className={cn(
+                                  "absolute top-3 left-3 z-10 p-2 rounded-full transition-all active:scale-90 backdrop-blur-md shadow",
+                                  favorites.some(f => f.place_id === place.id)
+                                    ? "text-rose-500 bg-white/95"
+                                    : "text-white bg-black/35 hover:bg-black/55"
+                                )}
+                                type="button"
+                                aria-label="favorite"
+                              >
+                                <Heart className={cn("w-4 h-4", favorites.some(f => f.place_id === place.id) && "fill-current")} />
+                              </button>
+                              <span className="absolute bottom-3 left-3 font-cond text-[10px] uppercase tracking-[0.28em] text-white border border-white/80 px-2 py-0.5 backdrop-blur-sm bg-black/25">
+                                {locale === 'jp' ? 'MILZ スポット' : 'MILZ SPOT'}
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleFavorite(place.id)}
+                              className={cn(
+                                "absolute top-3 left-3 z-10 p-2 rounded-full transition-all active:scale-90 backdrop-blur-md",
+                                favorites.some(f => f.place_id === place.id)
+                                  ? "text-rose-500 bg-white/95"
+                                  : "text-white bg-white/15 hover:bg-white/25"
+                              )}
+                              type="button"
+                              aria-label="favorite"
+                            >
+                              <Heart className={cn("w-4 h-4", favorites.some(f => f.place_id === place.id) && "fill-current")} />
+                            </button>
                           )}
-                          <button
-                            onClick={() => handleToggleFavorite(place.id)}
-                            className={cn(
-                              "absolute top-3 right-3 z-10 p-2 rounded-full transition-all active:scale-90 backdrop-blur-md",
-                              favorites.some(f => f.place_id === place.id)
-                                ? "text-rose-500 bg-white/90"
-                                : "text-white bg-black/30 hover:bg-black/50"
+                          <div className="relative px-5 py-5 flex flex-col items-center text-center gap-3 text-white bg-black">
+                            {!place.image_url && (
+                              <span className="font-cond text-[10px] uppercase tracking-[0.28em] text-white border border-white/80 px-2 py-0.5">
+                                {locale === 'jp' ? 'MILZ スポット' : 'MILZ SPOT'}
+                              </span>
                             )}
-                            type="button"
-                          >
-                            <Heart className={cn("w-4 h-4", favorites.some(f => f.place_id === place.id) && "fill-current")} />
-                          </button>
-                          <div className="relative px-5 py-6 flex flex-col items-center text-center gap-3 text-white">
-                            <span className="font-cond text-[10px] uppercase tracking-[0.28em] text-white border border-white/80 px-2 py-0.5">
-                              {locale === 'jp' ? 'N° 01 — MILZ スポット' : 'N° 01 — MILZ SPOT'}
-                            </span>
-                            <h3 className="font-display text-[28px] leading-[0.92] tracking-tight text-white uppercase m-0 break-words drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
+                            <h3 className="font-display text-[26px] leading-[0.95] tracking-tight text-white uppercase m-0 break-words">
                               {place.name}
                             </h3>
                             <span className="block h-px w-10 bg-white/70" />
@@ -6801,7 +6821,7 @@ Return ONLY valid JSON matching the schema.`;
                               </div>
                             )}
                             {place.address && (
-                              <div className="text-[11px] leading-relaxed text-white/85 font-medium whitespace-pre-line break-words">
+                              <div className="text-[11px] leading-relaxed text-white/80 font-medium whitespace-pre-line break-words">
                                 {place.address}
                               </div>
                             )}
