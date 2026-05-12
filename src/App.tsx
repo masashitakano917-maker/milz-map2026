@@ -7154,7 +7154,7 @@ Return ONLY valid JSON matching the schema.`;
                               <div className="text-[10px] text-stone-500 font-medium line-clamp-2 flex-1">{place.address || ''}</div>
                               <button
                                 type="button"
-                                onClick={() => focusMapOnCoords({ lat: place.lat, lng: place.lng })}
+                                onClick={() => handlePlaceViewOnMap({ lat: place.lat, lng: place.lng, area_key: place.area_key, municipality: place.municipality, address: place.address })}
                                 className="mt-0.5 inline-flex items-center justify-center gap-1 self-start rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-stone-600 hover:border-black hover:text-black hover:bg-stone-50 transition-all"
                               >
                                 <MapIcon className="w-2.5 h-2.5" />
@@ -7370,7 +7370,7 @@ Return ONLY valid JSON matching the schema.`;
                                     <div className="text-[11px] text-stone-500 font-medium line-clamp-2 flex-1">{place.address || place.city || ''}</div>
                                     <button
                                       type="button"
-                                      onClick={() => focusMapOnCoords({ lat: place.lat, lng: place.lng })}
+                                      onClick={() => handlePlaceViewOnMap({ lat: place.lat, lng: place.lng, area_key: place.area_key, municipality: place.municipality, address: place.address })}
                                       className="mt-1 inline-flex items-center justify-center gap-1.5 self-start rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-stone-600 hover:border-black hover:text-black hover:bg-stone-50 transition-all"
                                     >
                                       <MapIcon className="w-3 h-3" />
