@@ -6473,7 +6473,7 @@ Return ONLY valid JSON matching the schema.`;
                             {areaOptions.map((area) => (
                               <button
                                 key={area.key}
-                                onClick={() => setLocationFilter(createLocationFilterFromArea(area.key, area.cities[0]?.name))}
+                                onClick={() => setLocationFilter(createLocationFilterFromArea(area.key))}
                                 className={cn(
                                   "px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] whitespace-nowrap transition-all rounded-full border",
                                   locationFilter.areaKey === area.key
@@ -7763,7 +7763,7 @@ Return ONLY valid JSON matching the schema.`;
                           {areaOptions.map((area) => (
                             <button
                               key={area.key}
-                              onClick={() => setLocationFilter(createLocationFilterFromArea(area.key, area.cities[0]?.name))}
+                              onClick={() => setLocationFilter(createLocationFilterFromArea(area.key))}
                               className={cn(
                                 "px-5 py-3 rounded-full text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border",
                                 locationFilter.areaKey === area.key
@@ -7784,7 +7784,7 @@ Return ONLY valid JSON matching the schema.`;
                           <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-4">{t('areaLabel')}</label>
                           <select
                             value={locationFilter.areaKey}
-                            onChange={(e) => setLocationFilter(createLocationFilterFromArea(e.target.value, getAreaCityOptions(e.target.value)[0]?.name))}
+                            onChange={(e) => setLocationFilter(createLocationFilterFromArea(e.target.value))}
                             className="w-full px-5 py-4 md:px-8 md:py-5 bg-stone-50 border border-stone-100 rounded-[1.25rem] md:rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm"
                           >
                             {areaOptions.map((area) => (
