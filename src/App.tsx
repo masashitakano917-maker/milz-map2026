@@ -6763,27 +6763,54 @@ Return ONLY valid JSON matching the schema.`;
                       icon={getCustomIcon(place.category, mapStyle)}
                     >
                       <Popup className="custom-popup">
-                        <div className="p-0 w-[260px] overflow-hidden bg-white">
-                          <div className="px-5 py-6 flex flex-col items-center text-center gap-3">
-                            <span className="font-cond text-[10px] uppercase tracking-[0.28em] text-black border border-black px-2 py-0.5">N° 01 — MILZ SPOT</span>
-                            <h3 className="font-display text-[28px] leading-[0.92] tracking-tight text-black uppercase m-0 break-words">{place.name}</h3>
-                            <span className="block h-px w-10 bg-black/60" />
+                        <div className="relative p-0 w-[260px] overflow-hidden bg-black">
+                          {place.image_url && (
+                            <>
+                              <img
+                                src={place.image_url}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                                alt=""
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-black/80" />
+                            </>
+                          )}
+                          <button
+                            onClick={() => handleToggleFavorite(place.id)}
+                            className={cn(
+                              "absolute top-3 right-3 z-10 p-2 rounded-full transition-all active:scale-90 backdrop-blur-md",
+                              favorites.some(f => f.place_id === place.id)
+                                ? "text-rose-500 bg-white/90"
+                                : "text-white bg-black/30 hover:bg-black/50"
+                            )}
+                            type="button"
+                          >
+                            <Heart className={cn("w-4 h-4", favorites.some(f => f.place_id === place.id) && "fill-current")} />
+                          </button>
+                          <div className="relative px-5 py-6 flex flex-col items-center text-center gap-3 text-white">
+                            <span className="font-cond text-[10px] uppercase tracking-[0.28em] text-white border border-white/80 px-2 py-0.5">
+                              {locale === 'jp' ? 'N° 01 — MILZ スポット' : 'N° 01 — MILZ SPOT'}
+                            </span>
+                            <h3 className="font-display text-[28px] leading-[0.92] tracking-tight text-white uppercase m-0 break-words drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]">
+                              {place.name}
+                            </h3>
+                            <span className="block h-px w-10 bg-white/70" />
                             {place.category && (
-                              <div className="font-cond text-[11px] uppercase tracking-[0.28em] text-black">
-                                ★ {place.category} ★
+                              <div className="font-cond text-[11px] uppercase tracking-[0.28em] text-white">
+                                ★ {localizeCategory(place.category, locale)} ★
                               </div>
                             )}
                             {place.address && (
-                              <div className="text-[11px] leading-relaxed text-stone-500 font-medium whitespace-pre-line break-words">
+                              <div className="text-[11px] leading-relaxed text-white/85 font-medium whitespace-pre-line break-words">
                                 {place.address}
                               </div>
                             )}
                             <button
                               type="button"
                               onClick={() => openPlaceDetail(place)}
-                              className="mt-2 w-full py-3 bg-black text-white font-cond text-[11px] font-extrabold uppercase tracking-[0.28em] flex items-center justify-center gap-2 hover:bg-stone-800 transition-all active:scale-[0.98]"
+                              className="mt-2 w-full py-3 bg-white text-black font-cond text-[11px] font-extrabold uppercase tracking-[0.28em] flex items-center justify-center gap-2 hover:bg-stone-100 transition-all active:scale-[0.98]"
                             >
-                              Details
+                              {locale === 'jp' ? '詳細を見る' : 'DETAILS'}
                               <ArrowUpRight className="w-3 h-3" />
                             </button>
                           </div>
