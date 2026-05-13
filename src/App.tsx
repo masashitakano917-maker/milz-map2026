@@ -3484,7 +3484,37 @@ function AppMain() {
     if (/^Rinkai/i.test(l)) return 'Rinkai';
     if (/^Tokyo Monorail/i.test(l)) return 'Tokyo Monorail';
     if (/^Nippori-Toneri/i.test(l)) return 'Nippori-Toneri Liner';
+    if (/^Hokuso/i.test(l)) return 'Hokuso';
+    if (/^Shibayama/i.test(l)) return 'Shibayama';
     return l.split(/\s+/)[0];
+  };
+
+  const OPERATOR_JP_LABELS: Record<string, string> = {
+    'JR': 'JR',
+    'Tokyo Metro': '東京メトロ',
+    'Toei': '都営',
+    'Toden': '都電',
+    'Tokyu': '東急',
+    'Keio': '京王',
+    'Odakyu': '小田急',
+    'Seibu': '西武',
+    'Tobu': '東武',
+    'Keikyu': '京急',
+    'Keisei': '京成',
+    'Tsukuba Express': 'つくばエクスプレス',
+    'Yurikamome': 'ゆりかもめ',
+    'Rinkai': 'りんかい線',
+    'Tokyo Monorail': '東京モノレール',
+    'Nippori-Toneri Liner': '日暮里・舎人ライナー',
+    'Hokuso': '北総',
+    'Shibayama': '芝山',
+  };
+
+  const operatorLabel = (op: string) => {
+    const jp = OPERATOR_JP_LABELS[op];
+    if (!jp) return op;
+    if (locale === 'jp') return `${jp} / ${op}`;
+    return `${op} / ${jp}`;
   };
 
   const operatorOptions = useMemo(() => {
@@ -3493,7 +3523,7 @@ function AppMain() {
       const op = deriveOperatorFromLine(ln);
       if (op) set.add(op);
     }));
-    const order = ['JR','Tokyo Metro','Toei','Tokyu','Keio','Odakyu','Seibu','Tobu','Keikyu','Keisei','Yurikamome','Rinkai','Tokyo Monorail','Tsukuba Express','Toden','Nippori-Toneri Liner'];
+    const order = ['JR','Tokyo Metro','Toei','Tokyu','Keio','Odakyu','Seibu','Tobu','Keikyu','Keisei','Yurikamome','Rinkai','Tokyo Monorail','Tsukuba Express','Toden','Nippori-Toneri Liner','Hokuso','Shibayama'];
     return Array.from(set).sort((a, b) => {
       const ai = order.indexOf(a); const bi = order.indexOf(b);
       if (ai === -1 && bi === -1) return a.localeCompare(b);
@@ -3507,6 +3537,15 @@ function AppMain() {
     if (!selectedOperator) return allAreaStations;
     return allAreaStations.filter((s) => (s.lines || []).some((ln) => deriveOperatorFromLine(ln) === selectedOperator));
   }, [allAreaStations, selectedOperator]);
+
+  const stationDisplayLine = (s: StationOption): string => {
+    const lines = s.lines || [];
+    if (selectedOperator) {
+      const match = lines.find((ln) => deriveOperatorFromLine(ln) === selectedOperator);
+      if (match) return match;
+    }
+    return lines[0] || '';
+  };
   const selectedStation = useMemo(
     () => currentAreaStations.find((s) => s.id === selectedStationId) || null,
     [currentAreaStations, selectedStationId]
@@ -6580,33 +6619,16 @@ Return ONLY valid JSON matching the schema.`;
                         {allAreaStations.length > 0 && operatorOptions.length > 1 && (
                           <div className="space-y-4">
                             <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('operatorLabel')}</p>
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                onClick={() => { setSelectedOperator(''); setSelectedStationId(''); }}
-                                className={cn(
-                                  "px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] rounded-full border transition-all",
-                                  selectedOperator === ''
-                                    ? "bg-black text-white border-black"
-                                    : "text-stone-400 border-stone-100 hover:border-stone-200"
-                                )}
-                              >
-                                {t('allOperatorsOption')}
-                              </button>
+                            <select
+                              value={selectedOperator}
+                              onChange={(e) => { setSelectedOperator(e.target.value); setSelectedStationId(''); }}
+                              className="w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium"
+                            >
+                              <option value="">{t('allOperatorsOption')}</option>
                               {operatorOptions.map((op) => (
-                                <button
-                                  key={op}
-                                  onClick={() => { setSelectedOperator(op); setSelectedStationId(''); }}
-                                  className={cn(
-                                    "px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] rounded-full border transition-all",
-                                    selectedOperator === op
-                                      ? "bg-black text-white border-black"
-                                      : "text-stone-400 border-stone-100 hover:border-stone-200"
-                                  )}
-                                >
-                                  {op}
-                                </button>
+                                <option key={op} value={op}>{operatorLabel(op)}</option>
                               ))}
-                            </div>
+                            </select>
                           </div>
                         )}
 
@@ -6624,11 +6646,14 @@ Return ONLY valid JSON matching the schema.`;
                               className="w-full px-4 py-4 bg-stone-50 border border-stone-200 text-sm focus:outline-none appearance-none font-medium"
                             >
                               <option value="">{t('allStationsOption')}</option>
-                              {currentAreaStations.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
-                                </option>
-                              ))}
+                              {currentAreaStations.map((s) => {
+                                const ln = stationDisplayLine(s);
+                                return (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{ln ? ` — ${ln}` : ''}
+                                  </option>
+                                );
+                              })}
                             </select>
                             {selectedStation && (
                               <div className="flex flex-wrap gap-2 pt-1">
@@ -7933,11 +7958,14 @@ Return ONLY valid JSON matching the schema.`;
                               className="w-full px-8 py-5 bg-stone-50 border border-stone-100 rounded-[1.5rem] outline-none focus:border-black appearance-none font-bold text-sm"
                             >
                               <option value="">{t('allStationsOption')}</option>
-                              {currentAreaStations.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{s.lines?.[0] ? ` — ${s.lines[0]}` : ''}
-                                </option>
-                              ))}
+                              {currentAreaStations.map((s) => {
+                                const ln = stationDisplayLine(s);
+                                return (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}{s.name_jp ? ` ${s.name_jp}` : ''}{ln ? ` — ${ln}` : ''}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </div>
                           <div className="space-y-2">
