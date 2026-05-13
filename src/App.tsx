@@ -78,6 +78,7 @@ import { MAP_THEMES, TOKYO_ILLUSTRATION_THEME, isIllustrationTheme, type MapThem
 import TokyoMiniatureMap, { type MapNavigator } from './TokyoMiniatureMap';
 import MilzLanding from './MilzLanding';
 import AITrendSpots from './AITrendSpots';
+import { transcodeToIosMp4 } from './videoTranscoder';
 
 const AI_TREND_AREA_MAP: Record<string, 'ny' | 'tokyo' | 'kyoto' | 'seoul' | 'hawaii'> = {
   'new-york': 'ny',
@@ -3805,6 +3806,8 @@ function AppMain() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [placeEditorVideosText, setPlaceEditorVideosText] = useState('');
+  const [videoTranscodeStatus, setVideoTranscodeStatus] = useState<string>('');
+  const [videoTranscodeProgress, setVideoTranscodeProgress] = useState<number>(0);
   const isFetchingProfileRef = useRef(false);
 
   const mapRef = useRef<MapNavigator | null>(null);
@@ -5025,11 +5028,30 @@ function AppMain() {
 
   const ensureMp4VideoFile = React.useCallback(async (file: File) => {
     const filename = (file.name || '').toLowerCase();
-    const isMp4 = file.type === 'video/mp4' || filename.endsWith('.mp4');
-    if (!isMp4) {
-      throw new Error(locale === 'jp' ? '動画はMP4のみアップロードできます。MOVは一旦対象外です。' : 'Only MP4 videos can be uploaded right now. MOV is not supported in the web uploader yet.');
+    const looksLikeVideo =
+      (file.type && file.type.startsWith('video/')) ||
+      ['.mp4', '.mov', '.m4v', '.webm', '.mkv', '.avi', '.3gp', '.hevc'].some((ext) => filename.endsWith(ext));
+    if (!looksLikeVideo) {
+      throw new Error(locale === 'jp' ? '動画ファイルを選択してください。' : 'Please select a video file.');
     }
-    return file;
+    setVideoTranscodeStatus(locale === 'jp' ? '動画を準備中...' : 'Preparing video...');
+    setVideoTranscodeProgress(0);
+    try {
+      const out = await transcodeToIosMp4(file, {
+        onStatus: (msg) => setVideoTranscodeStatus(msg),
+        onProgress: (ratio) => setVideoTranscodeProgress(ratio),
+      });
+      return out;
+    } catch (err: any) {
+      throw new Error(
+        locale === 'jp'
+          ? `動画の変換に失敗しました: ${err?.message || 'unknown error'}`
+          : `Video transcoding failed: ${err?.message || 'unknown error'}`,
+      );
+    } finally {
+      setVideoTranscodeStatus('');
+      setVideoTranscodeProgress(0);
+    }
   }, [locale]);
 
   const validatePlayableVideoFile = React.useCallback(async (file: File) => {
@@ -9727,14 +9749,28 @@ Return ONLY valid JSON matching the schema.`;
                       <div className="space-y-4">
                         <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">{addSpotCopy.videos}</label>
                         <DropZone
-                          label={locale === 'jp' ? 'MP4 をドロップでアップロード' : 'Drop MP4 to upload'}
+                          label={locale === 'jp' ? '動画をドロップでアップロード (MP4 / MOV)' : 'Drop video to upload (MP4 / MOV)'}
                           onFilesDrop={handlePlaceVideoFilesDrop}
                           isLoading={uploading}
                           icon={Video}
                           className="min-h-[180px]"
                           accept="video/*,.mov,.mp4,.m4v,.webm"
                         />
-                        <textarea 
+                        {(videoTranscodeStatus || videoTranscodeProgress > 0) && (
+                          <div className="px-1 space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-500">
+                              <span className="truncate pr-2">{videoTranscodeStatus || (locale === 'jp' ? '変換中...' : 'Transcoding...')}</span>
+                              <span className="tabular-nums">{Math.round(videoTranscodeProgress * 100)}%</span>
+                            </div>
+                            <div className="h-1 w-full bg-stone-200 overflow-hidden rounded-full">
+                              <div
+                                className="h-full bg-black transition-all"
+                                style={{ width: `${Math.max(2, Math.round(videoTranscodeProgress * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <textarea
                           name="videos"
                           rows={4}
                           value={placeEditorVideosText}
@@ -9744,8 +9780,8 @@ Return ONLY valid JSON matching the schema.`;
                         />
                         <p className="px-1 text-[11px] leading-relaxed text-stone-500">
                           {locale === 'jp'
-                            ? 'MOV はブラウザ内で MP4 に変換してから R2 へ保存します。既存の YouTube URL も残せますが、MILZ内再生はアップロード動画が推奨です。'
-                            : 'MP4 files are uploaded directly to R2. Legacy YouTube URLs can stay here, but uploaded MP4 files are recommended for in-app playback.'}
+                            ? 'アップロード時にブラウザ内で iOS 互換 MP4 (H.264 / AAC / faststart) へ自動変換します。初回は FFmpeg のロードに少し時間がかかります。'
+                            : 'On upload, videos are auto-transcoded in the browser to an iOS-compatible MP4 (H.264 / AAC / faststart). The first run takes a moment to load FFmpeg.'}
                         </p>
                       </div>
 

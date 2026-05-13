@@ -10,4 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+  },
 });
