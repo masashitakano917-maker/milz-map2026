@@ -265,38 +265,55 @@ function getYouTubeEmbedUrl(value?: string | null): string | null {
 
 function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: string; placeName: string }) {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
-  const [needsTap, setNeedsTap] = React.useState(false);
+  const [errored, setErrored] = React.useState(false);
+  const [started, setStarted] = React.useState(false);
 
   const tryPlay = React.useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
     v.playsInline = true;
+    try { v.load(); } catch {}
     const p = v.play();
     if (p && typeof p.then === 'function') {
-      p.then(() => setNeedsTap(false)).catch(() => setNeedsTap(true));
+      p.then(() => setStarted(true)).catch(() => {});
     }
   }, []);
 
   React.useEffect(() => {
-    tryPlay();
+    setErrored(false);
+    setStarted(false);
     const v = videoRef.current;
     if (!v) return;
-    const onCanPlay = () => tryPlay();
-    const onPlaying = () => setNeedsTap(false);
-    const onPause = () => {
-      if (v.ended) return;
-      setNeedsTap(true);
-    };
+    const onCanPlay = () => { v.play().then(() => setStarted(true)).catch(() => {}); };
+    const onPlaying = () => setStarted(true);
+    const onError = () => setErrored(true);
     v.addEventListener('canplay', onCanPlay);
     v.addEventListener('playing', onPlaying);
-    v.addEventListener('pause', onPause);
+    v.addEventListener('error', onError);
     return () => {
       v.removeEventListener('canplay', onCanPlay);
       v.removeEventListener('playing', onPlaying);
-      v.removeEventListener('pause', onPause);
+      v.removeEventListener('error', onError);
     };
-  }, [src, tryPlay]);
+  }, [src]);
+
+  if (errored) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-4 bg-stone-950">
+        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">MILZ VIDEO</p>
+        <p className="text-sm font-semibold text-white/90">この動画はお使いの端末で再生できません</p>
+        <a
+          href={src}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.22em] text-white"
+        >
+          ダウンロード
+        </a>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -314,14 +331,14 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
         loop
         autoPlay
         preload="auto"
-        controls={false}
-        onClick={() => tryPlay()}
+        controls
       />
-      {needsTap && (
+      {!started && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); tryPlay(); }}
-          className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[1px]"
+          onClick={tryPlay}
+          onTouchEnd={(e) => { e.preventDefault(); tryPlay(); }}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/35"
           aria-label="Play video"
         >
           <span className="flex items-center justify-center w-20 h-20 rounded-full bg-white/95 text-black shadow-xl">
