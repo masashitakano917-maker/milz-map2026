@@ -34,9 +34,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const safeName = sanitizeFilename(file.name || 'upload.bin');
     const key = `uploads/${crypto.randomUUID()}-${safeName}`;
 
+    const lowerName = safeName.toLowerCase();
+    let contentType = file.type || '';
+    if (!contentType || contentType === 'application/octet-stream') {
+      if (lowerName.endsWith('.mp4') || lowerName.endsWith('.m4v')) contentType = 'video/mp4';
+      else if (lowerName.endsWith('.mov')) contentType = 'video/quicktime';
+      else if (lowerName.endsWith('.webm')) contentType = 'video/webm';
+      else contentType = 'application/octet-stream';
+    }
+
     await env.R2_BUCKET.put(key, await file.arrayBuffer(), {
       httpMetadata: {
-        contentType: file.type || 'application/octet-stream',
+        contentType,
       },
     });
 

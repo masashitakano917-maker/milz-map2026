@@ -267,6 +267,7 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [errored, setErrored] = React.useState(false);
   const [started, setStarted] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState<string>('');
 
   const tryPlay = React.useCallback(() => {
     const v = videoRef.current;
@@ -276,22 +277,42 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
     try { v.load(); } catch {}
     const p = v.play();
     if (p && typeof p.then === 'function') {
-      p.then(() => setStarted(true)).catch(() => {});
+      p.then(() => setStarted(true)).catch((err) => {
+        setErrorMsg(String(err?.message || err || 'play() failed'));
+      });
     }
   }, []);
 
   React.useEffect(() => {
     setErrored(false);
     setStarted(false);
+    setErrorMsg('');
     const v = videoRef.current;
     if (!v) return;
     const onCanPlay = () => { v.play().then(() => setStarted(true)).catch(() => {}); };
     const onPlaying = () => setStarted(true);
-    const onError = () => setErrored(true);
+    const onError = () => {
+      const code = v.error?.code;
+      const codeMap: Record<number, string> = {
+        1: 'MEDIA_ERR_ABORTED',
+        2: 'MEDIA_ERR_NETWORK',
+        3: 'MEDIA_ERR_DECODE',
+        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+      };
+      setErrorMsg(code ? codeMap[code] || `error_${code}` : 'unknown');
+      setErrored(true);
+    };
+    const stallTimer = setTimeout(() => {
+      if (v.readyState < 2 && !v.error) {
+        setErrorMsg('load_timeout');
+        setErrored(true);
+      }
+    }, 12000);
     v.addEventListener('canplay', onCanPlay);
     v.addEventListener('playing', onPlaying);
     v.addEventListener('error', onError);
     return () => {
+      clearTimeout(stallTimer);
       v.removeEventListener('canplay', onCanPlay);
       v.removeEventListener('playing', onPlaying);
       v.removeEventListener('error', onError);
@@ -303,13 +324,14 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
       <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-4 bg-stone-950">
         <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">MILZ VIDEO</p>
         <p className="text-sm font-semibold text-white/90">この動画はお使いの端末で再生できません</p>
+        {errorMsg ? <p className="text-[10px] font-mono text-white/40 break-all">{errorMsg}</p> : null}
         <a
           href={src}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.22em] text-white"
         >
-          ダウンロード
+          別タブで開く
         </a>
       </div>
     );
@@ -350,6 +372,74 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
   );
 }
 
+function SpotDetailVideo({ url, title, onPlay }: { url: string; title: string; onPlay: () => void }) {
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [errored, setErrored] = React.useState(false);
+  const [errorMsg, setErrorMsg] = React.useState('');
+
+  React.useEffect(() => {
+    setErrored(false);
+    setErrorMsg('');
+    const v = videoRef.current;
+    if (!v) return;
+    const onError = () => {
+      const code = v.error?.code;
+      const codeMap: Record<number, string> = {
+        1: 'MEDIA_ERR_ABORTED',
+        2: 'MEDIA_ERR_NETWORK',
+        3: 'MEDIA_ERR_DECODE',
+        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+      };
+      setErrorMsg(code ? codeMap[code] || `error_${code}` : 'unknown');
+      setErrored(true);
+    };
+    const stallTimer = setTimeout(() => {
+      if (v.readyState < 1 && !v.error) {
+        setErrorMsg('load_timeout');
+        setErrored(true);
+      }
+    }, 15000);
+    v.addEventListener('error', onError);
+    return () => {
+      clearTimeout(stallTimer);
+      v.removeEventListener('error', onError);
+    };
+  }, [url]);
+
+  if (errored) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-3 bg-stone-950">
+        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/40">MILZ VIDEO</p>
+        <p className="text-sm font-semibold text-white/90">この動画はお使いの端末で再生できません</p>
+        {errorMsg ? <p className="text-[10px] font-mono text-white/40 break-all">{errorMsg}</p> : null}
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/20 text-[10px] font-black uppercase tracking-[0.22em] text-white"
+        >
+          別タブで開く
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <video
+      ref={videoRef}
+      src={url}
+      title={title}
+      className="w-full h-full object-cover bg-black"
+      controls
+      playsInline
+      // @ts-expect-error legacy iOS attr
+      webkit-playsinline="true"
+      preload="metadata"
+      onPlay={onPlay}
+    />
+  );
+}
+
 function VideoEmbed({ url, title, areaKey, placeId, placeName }: { url: string; title: string; areaKey?: string | null; placeId?: string | null; placeName?: string | null }) {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(url);
   const isDirectVideo = isLikelyVideoUrl(url) && !youtubeEmbedUrl;
@@ -364,17 +454,7 @@ function VideoEmbed({ url, title, areaKey, placeId, placeName }: { url: string; 
   };
 
   if (isDirectVideo) {
-    return (
-      <video
-        src={url}
-        title={title}
-        className="w-full h-full object-cover bg-black"
-        controls
-        playsInline
-        preload="metadata"
-        onPlay={handleTrackPlay}
-      />
-    );
+    return <SpotDetailVideo url={url} title={title} onPlay={handleTrackPlay} />;
   }
 
   if (youtubeEmbedUrl) {
