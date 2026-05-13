@@ -4710,14 +4710,28 @@ function AppMain() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/storage/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
+      const controller = new AbortController();
+      const timeoutMs = file.type.startsWith('video/') ? 120000 : 60000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      let response: Response;
+      try {
+        response = await fetch('/api/storage/upload', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          signal: controller.signal
+        });
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          throw new Error(locale === 'jp' ? `アップロードがタイムアウトしました (${Math.round(timeoutMs / 1000)}秒)。ファイルサイズや回線をご確認ください。` : `Upload timed out after ${Math.round(timeoutMs / 1000)}s. Check the file size and connection.`);
         }
-      });
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const text = await response.text();
 
@@ -4773,9 +4787,13 @@ function AppMain() {
       const finish = (handler: () => void) => {
         if (settled) return;
         settled = true;
+        clearTimeout(timeoutId);
         cleanup();
         handler();
       };
+      const timeoutId = setTimeout(() => {
+        finish(() => reject(new Error(locale === 'jp' ? '動画の読み込みがタイムアウトしました。MP4を書き出してから再アップしてください。' : 'Video load timed out. Please export the clip as MP4 and upload it again.')));
+      }, 10000);
       video.preload = 'metadata';
       video.muted = true;
       video.playsInline = true;
@@ -4831,6 +4849,8 @@ function AppMain() {
     setPlaceEditorVideosText('');
     setModalAddress('');
     setEditingPlace(null);
+    setIsSubmitting(false);
+    setUploading(false);
   };
 
   const handleEditPlace = (place: Place) => {
@@ -4854,6 +4874,8 @@ function AppMain() {
     setPlaceEditorVideosText('');
     setModalAddress('');
     setNewPlacePos(null);
+    setIsSubmitting(false);
+    setUploading(false);
     setIsAdding(true);
     showToast('地図をタップして場所を指定してください。', 'info');
   };
