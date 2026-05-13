@@ -263,6 +263,76 @@ function getYouTubeEmbedUrl(value?: string | null): string | null {
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
 }
 
+function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: string; placeName: string }) {
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [needsTap, setNeedsTap] = React.useState(false);
+
+  const tryPlay = React.useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.playsInline = true;
+    const p = v.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => setNeedsTap(false)).catch(() => setNeedsTap(true));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    tryPlay();
+    const v = videoRef.current;
+    if (!v) return;
+    const onCanPlay = () => tryPlay();
+    const onPlaying = () => setNeedsTap(false);
+    const onPause = () => {
+      if (v.ended) return;
+      setNeedsTap(true);
+    };
+    v.addEventListener('canplay', onCanPlay);
+    v.addEventListener('playing', onPlaying);
+    v.addEventListener('pause', onPause);
+    return () => {
+      v.removeEventListener('canplay', onCanPlay);
+      v.removeEventListener('playing', onPlaying);
+      v.removeEventListener('pause', onPause);
+    };
+  }, [src, tryPlay]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        src={src}
+        poster={poster}
+        title={placeName}
+        className="w-full h-full object-cover"
+        playsInline
+        // @ts-expect-error legacy iOS attr
+        webkit-playsinline="true"
+        x5-playsinline="true"
+        muted
+        loop
+        autoPlay
+        preload="auto"
+        controls={false}
+        onClick={() => tryPlay()}
+      />
+      {needsTap && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); tryPlay(); }}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[1px]"
+          aria-label="Play video"
+        >
+          <span className="flex items-center justify-center w-20 h-20 rounded-full bg-white/95 text-black shadow-xl">
+            <svg viewBox="0 0 24 24" className="w-9 h-9 ml-1" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+        </button>
+      )}
+    </>
+  );
+}
+
 function VideoEmbed({ url, title, areaKey, placeId, placeName }: { url: string; title: string; areaKey?: string | null; placeId?: string | null; placeName?: string | null }) {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(url);
   const isDirectVideo = isLikelyVideoUrl(url) && !youtubeEmbedUrl;
@@ -8461,31 +8531,7 @@ Return ONLY valid JSON matching the schema.`;
                             <div className="w-full max-w-[270px] sm:max-w-[310px] md:max-w-[340px] xl:max-w-[390px]">
                               <div className="relative aspect-[9/16] rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-[0_35px_100px_rgba(0,0,0,0.45)] max-h-[calc(100svh-16.5rem)] sm:max-h-[calc(100svh-15rem)] xl:max-h-[calc(100svh-8rem)] mx-auto">
                                 {item.playbackType === 'direct' ? (
-                                  <video
-                                    ref={(el) => {
-                                      if (!el) return;
-                                      el.muted = true;
-                                      el.playsInline = true;
-                                      const tryPlay = () => { el.play().catch(() => {}); };
-                                      tryPlay();
-                                      el.addEventListener('canplay', tryPlay, { once: true });
-                                    }}
-                                    src={item.url}
-                                    poster={item.imageUrl}
-                                    className="w-full h-full object-cover"
-                                    controls
-                                    playsInline
-                                    webkit-playsinline="true"
-                                    x5-playsinline="true"
-                                    muted
-                                    loop
-                                    autoPlay
-                                    preload="auto"
-                                    onClick={(e) => {
-                                      const v = e.currentTarget;
-                                      if (v.paused) v.play().catch(() => {});
-                                    }}
-                                  />
+                                  <ShortsDirectVideo src={item.url} poster={item.imageUrl} placeName={item.placeName} />
                                 ) : item.embedUrl ? (
                                   <iframe
                                     src={item.embedUrl}
