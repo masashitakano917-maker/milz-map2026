@@ -2240,6 +2240,8 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     allWardsOption: 'すべての区',
     stationLabel: '駅',
     allStationsOption: 'すべての駅',
+    operatorLabel: '鉄道会社',
+    allOperatorsOption: 'すべての会社',
     categoriesLabel: 'カテゴリー',
     allCategoriesOption: 'すべて',
     badgesLabel: 'バッジ',
@@ -2327,6 +2329,8 @@ const uiCopy: Record<Locale, Record<string, string>> = {
     allWardsOption: 'All wards',
     stationLabel: 'Station',
     allStationsOption: 'All stations',
+    operatorLabel: 'Railway operator',
+    allOperatorsOption: 'All operators',
     categoriesLabel: 'Categories',
     allCategoriesOption: 'All',
     badgesLabel: 'Badges',
@@ -3436,6 +3440,7 @@ function AppMain() {
   const [stationsByArea, setStationsByArea] = useState<Record<string, StationOption[]>>({});
   const [selectedStationId, setSelectedStationId] = useState<string>('');
   const [stationRadius, setStationRadius] = useState<number>(800);
+  const [selectedOperator, setSelectedOperator] = useState<string>('');
 
   useEffect(() => {
     const areaKey = locationFilter.areaKey;
@@ -3455,9 +3460,53 @@ function AppMain() {
 
   useEffect(() => {
     setSelectedStationId('');
+    setSelectedOperator('');
   }, [locationFilter.areaKey]);
 
-  const currentAreaStations = stationsByArea[locationFilter.areaKey] || [];
+  const allAreaStations = stationsByArea[locationFilter.areaKey] || [];
+
+  const deriveOperatorFromLine = (line: string): string => {
+    const l = (line || '').trim();
+    if (!l) return '';
+    if (/^JR\b/i.test(l)) return 'JR';
+    if (/^Tokyo Metro\b/i.test(l)) return 'Tokyo Metro';
+    if (/^Toei\b/i.test(l)) return 'Toei';
+    if (/^Toden\b/i.test(l)) return 'Toden';
+    if (/^Tokyu\b/i.test(l)) return 'Tokyu';
+    if (/^Keio\b/i.test(l)) return 'Keio';
+    if (/^Odakyu\b/i.test(l)) return 'Odakyu';
+    if (/^Seibu\b/i.test(l)) return 'Seibu';
+    if (/^Tobu\b/i.test(l)) return 'Tobu';
+    if (/^Keikyu\b/i.test(l)) return 'Keikyu';
+    if (/^Keisei\b/i.test(l)) return 'Keisei';
+    if (/^Tsukuba/i.test(l)) return 'Tsukuba Express';
+    if (/^Yurikamome/i.test(l)) return 'Yurikamome';
+    if (/^Rinkai/i.test(l)) return 'Rinkai';
+    if (/^Tokyo Monorail/i.test(l)) return 'Tokyo Monorail';
+    if (/^Nippori-Toneri/i.test(l)) return 'Nippori-Toneri Liner';
+    return l.split(/\s+/)[0];
+  };
+
+  const operatorOptions = useMemo(() => {
+    const set = new Set<string>();
+    allAreaStations.forEach((s) => (s.lines || []).forEach((ln) => {
+      const op = deriveOperatorFromLine(ln);
+      if (op) set.add(op);
+    }));
+    const order = ['JR','Tokyo Metro','Toei','Tokyu','Keio','Odakyu','Seibu','Tobu','Keikyu','Keisei','Yurikamome','Rinkai','Tokyo Monorail','Tsukuba Express','Toden','Nippori-Toneri Liner'];
+    return Array.from(set).sort((a, b) => {
+      const ai = order.indexOf(a); const bi = order.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [allAreaStations]);
+
+  const currentAreaStations = useMemo(() => {
+    if (!selectedOperator) return allAreaStations;
+    return allAreaStations.filter((s) => (s.lines || []).some((ln) => deriveOperatorFromLine(ln) === selectedOperator));
+  }, [allAreaStations, selectedOperator]);
   const selectedStation = useMemo(
     () => currentAreaStations.find((s) => s.id === selectedStationId) || null,
     [currentAreaStations, selectedStationId]
@@ -6527,6 +6576,39 @@ Return ONLY valid JSON matching the schema.`;
                             ))}
                           </select>
                         </div>
+
+                        {allAreaStations.length > 0 && operatorOptions.length > 1 && (
+                          <div className="space-y-4">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{t('operatorLabel')}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => { setSelectedOperator(''); setSelectedStationId(''); }}
+                                className={cn(
+                                  "px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] rounded-full border transition-all",
+                                  selectedOperator === ''
+                                    ? "bg-black text-white border-black"
+                                    : "text-stone-400 border-stone-100 hover:border-stone-200"
+                                )}
+                              >
+                                {t('allOperatorsOption')}
+                              </button>
+                              {operatorOptions.map((op) => (
+                                <button
+                                  key={op}
+                                  onClick={() => { setSelectedOperator(op); setSelectedStationId(''); }}
+                                  className={cn(
+                                    "px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] rounded-full border transition-all",
+                                    selectedOperator === op
+                                      ? "bg-black text-white border-black"
+                                      : "text-stone-400 border-stone-100 hover:border-stone-200"
+                                  )}
+                                >
+                                  {op}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {currentAreaStations.length > 0 && (
                           <div className="space-y-4">
