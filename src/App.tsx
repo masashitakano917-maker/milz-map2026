@@ -1467,6 +1467,8 @@ interface ShortFeedItem {
   address?: string;
   hours?: string;
   websiteUrl?: string;
+  areaKey?: string | null;
+  municipality?: string | null;
 }
 
 type Locale = "jp" | "en";
@@ -6333,6 +6335,8 @@ Return ONLY valid JSON matching the schema.`;
           address: place.address || [place.municipality, place.prefecture, place.country].filter(Boolean).join(', '),
           hours: place.hours,
           websiteUrl: place.website_url,
+          areaKey: place.area_key || null,
+          municipality: place.municipality || null,
         });
       });
     });
@@ -8458,15 +8462,29 @@ Return ONLY valid JSON matching the schema.`;
                               <div className="relative aspect-[9/16] rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-[0_35px_100px_rgba(0,0,0,0.45)] max-h-[calc(100svh-16.5rem)] sm:max-h-[calc(100svh-15rem)] xl:max-h-[calc(100svh-8rem)] mx-auto">
                                 {item.playbackType === 'direct' ? (
                                   <video
+                                    ref={(el) => {
+                                      if (!el) return;
+                                      el.muted = true;
+                                      el.playsInline = true;
+                                      const tryPlay = () => { el.play().catch(() => {}); };
+                                      tryPlay();
+                                      el.addEventListener('canplay', tryPlay, { once: true });
+                                    }}
                                     src={item.url}
                                     poster={item.imageUrl}
                                     className="w-full h-full object-cover"
                                     controls
                                     playsInline
+                                    webkit-playsinline="true"
+                                    x5-playsinline="true"
                                     muted
                                     loop
                                     autoPlay
                                     preload="auto"
+                                    onClick={(e) => {
+                                      const v = e.currentTarget;
+                                      if (v.paused) v.play().catch(() => {});
+                                    }}
                                   />
                                 ) : item.embedUrl ? (
                                   <iframe
@@ -8531,7 +8549,7 @@ Return ONLY valid JSON matching the schema.`;
                                 {isPlaceFav ? 'Saved Spot' : 'Save Spot'}
                               </button>
                               <button
-                                onClick={() => handlePlaceViewOnMap({ lat: item.lat, lng: item.lng })}
+                                onClick={() => handlePlaceViewOnMap({ lat: item.lat, lng: item.lng, area_key: item.areaKey, municipality: item.municipality, address: item.address })}
                                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-white/15 text-[10px] font-black uppercase tracking-[0.22em] hover:border-white/40 hover:bg-white/5 transition-all"
                               >
                                 <MapPinned className="w-4 h-4" />
@@ -8587,7 +8605,7 @@ Return ONLY valid JSON matching the schema.`;
                                 {isPlaceFav ? 'Saved Spot' : 'Save Spot'}
                               </button>
                               <button
-                                onClick={() => handlePlaceViewOnMap({ lat: item.lat, lng: item.lng })}
+                                onClick={() => handlePlaceViewOnMap({ lat: item.lat, lng: item.lng, area_key: item.areaKey, municipality: item.municipality, address: item.address })}
                                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-white/15 text-[10px] font-black uppercase tracking-[0.22em] hover:border-white/40 hover:bg-white/5 transition-all"
                               >
                                 <MapPinned className="w-4 h-4" />
