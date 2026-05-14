@@ -264,7 +264,7 @@ function getYouTubeEmbedUrl(value?: string | null): string | null {
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
 }
 
-function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: string; placeName: string }) {
+function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; poster?: string; placeName: string; isActive: boolean }) {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [errored, setErrored] = React.useState(false);
   const [started, setStarted] = React.useState(false);
@@ -288,8 +288,17 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
     setErrored(false);
     setStarted(false);
     setErrorMsg('');
+  }, [src]);
+
+  React.useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+    if (!isActive) {
+      try { v.pause(); } catch {}
+      try { v.currentTime = 0; } catch {}
+      setStarted(false);
+      return;
+    }
     const onCanPlay = () => { v.play().then(() => setStarted(true)).catch(() => {}); };
     const onPlaying = () => setStarted(true);
     const onError = () => {
@@ -312,13 +321,14 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
     v.addEventListener('canplay', onCanPlay);
     v.addEventListener('playing', onPlaying);
     v.addEventListener('error', onError);
+    v.play().then(() => setStarted(true)).catch(() => {});
     return () => {
       clearTimeout(stallTimer);
       v.removeEventListener('canplay', onCanPlay);
       v.removeEventListener('playing', onPlaying);
       v.removeEventListener('error', onError);
     };
-  }, [src]);
+  }, [src, isActive]);
 
   if (errored) {
     return (
@@ -342,7 +352,7 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
     <>
       <video
         ref={videoRef}
-        src={src}
+        src={isActive ? src : undefined}
         poster={poster}
         title={placeName}
         className="w-full h-full object-cover"
@@ -352,9 +362,8 @@ function ShortsDirectVideo({ src, poster, placeName }: { src: string; poster?: s
         x5-playsinline="true"
         muted
         loop
-        autoPlay
-        preload="auto"
-        controls
+        preload={isActive ? 'auto' : 'none'}
+        controls={isActive}
       />
       {!started && (
         <button
@@ -3531,6 +3540,9 @@ function AppMain() {
   const [showMapStyleMenu, setShowMapStyleMenu] = useState(false);
   const [expandedShortInfoId, setExpandedShortInfoId] = useState<string | null>(null);
   const [shortsSwipeHintVisible, setShortsSwipeHintVisible] = useState(true);
+  const [activeShortId, setActiveShortId] = useState<string | null>(null);
+  const shortsContainerRef = useRef<HTMLDivElement | null>(null);
+  const shortItemRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   useEffect(() => {
     if (activeTab !== 'shorts') return;
@@ -3538,6 +3550,54 @@ function AppMain() {
     const timer = window.setTimeout(() => setShortsSwipeHintVisible(false), 5000);
     return () => window.clearTimeout(timer);
   }, [activeTab]);
+
+  const shortObserverRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    if (activeTab !== 'shorts') {
+      setActiveShortId(null);
+      shortObserverRef.current?.disconnect();
+      shortObserverRef.current = null;
+      return;
+    }
+    const root = shortsContainerRef.current;
+    if (!root) return;
+    const refs = shortItemRefs.current;
+    const recompute = () => {
+      const rootRect = root.getBoundingClientRect();
+      let topId: string | null = null;
+      let topRatio = 0;
+      refs.forEach((el, id) => {
+        const rect = el.getBoundingClientRect();
+        const visible = Math.max(0, Math.min(rect.bottom, rootRect.bottom) - Math.max(rect.top, rootRect.top));
+        const ratio = visible / Math.max(1, rootRect.height);
+        if (ratio > topRatio) { topRatio = ratio; topId = id; }
+      });
+      if (topId) setActiveShortId(topId);
+    };
+    const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
+    shortObserverRef.current = observer;
+    refs.forEach((el) => observer.observe(el));
+    recompute();
+    return () => {
+      observer.disconnect();
+      shortObserverRef.current = null;
+    };
+  }, [activeTab]);
+
+  const registerShortRef = useCallback((id: string, el: HTMLElement | null) => {
+    const refs = shortItemRefs.current;
+    const prev = refs.get(id);
+    if (prev && prev !== el) {
+      shortObserverRef.current?.unobserve(prev);
+    }
+    if (el) {
+      refs.set(id, el);
+      shortObserverRef.current?.observe(el);
+    } else {
+      refs.delete(id);
+    }
+  }, []);
 
   const detailViewOnMapLabel = locale === 'jp' ? '地図で見る' : 'View on Map';
   const detailMiniMapLabel = locale === 'jp' ? '同一ページで位置を確認できるミニマップです。' : 'Mini map for quick location context on the same page.';
@@ -8515,6 +8575,7 @@ Return ONLY valid JSON matching the schema.`;
           {activeTab === 'shorts' && (
             <motion.div
               key="shorts"
+              ref={shortsContainerRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
@@ -8639,9 +8700,12 @@ Return ONLY valid JSON matching the schema.`;
                     </div>
                   );
 
+                  const isShortActive = activeShortId === item.id;
                   return (
                     <section
                       key={item.id}
+                      ref={(el) => registerShortRef(item.id, el)}
+                      data-short-id={item.id}
                       className="min-h-[calc(100svh-7rem)] snap-start px-4 pt-4 pb-[calc(14.5rem+env(safe-area-inset-bottom))] sm:px-6 md:px-8 md:pt-8 md:pb-44 flex items-start xl:items-center"
                     >
                       <div className="w-full max-w-[1280px] mx-auto">
@@ -8650,16 +8714,23 @@ Return ONLY valid JSON matching the schema.`;
                             <div className="w-full max-w-[270px] sm:max-w-[310px] md:max-w-[340px] xl:max-w-[390px]">
                               <div className="relative aspect-[9/16] rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-[0_35px_100px_rgba(0,0,0,0.45)] max-h-[calc(100svh-16.5rem)] sm:max-h-[calc(100svh-15rem)] xl:max-h-[calc(100svh-8rem)] mx-auto">
                                 {item.playbackType === 'direct' ? (
-                                  <ShortsDirectVideo src={item.url} poster={item.imageUrl} placeName={item.placeName} />
+                                  <ShortsDirectVideo src={item.url} poster={item.imageUrl} placeName={item.placeName} isActive={isShortActive} />
                                 ) : item.embedUrl ? (
-                                  <iframe
-                                    src={item.embedUrl}
-                                    title={item.placeName}
-                                    className="w-full h-full"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    allowFullScreen
-                                    referrerPolicy="strict-origin-when-cross-origin"
-                                  />
+                                  isShortActive ? (
+                                    <iframe
+                                      src={item.embedUrl}
+                                      title={item.placeName}
+                                      className="w-full h-full"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                      allowFullScreen
+                                      referrerPolicy="strict-origin-when-cross-origin"
+                                    />
+                                  ) : (
+                                    <div
+                                      className="w-full h-full bg-cover bg-center"
+                                      style={{ backgroundImage: item.imageUrl ? `url(${item.imageUrl})` : undefined, backgroundColor: '#0a0a0a' }}
+                                    />
+                                  )
                                 ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center px-6 text-center gap-4 bg-stone-950">
                                     <Video className="w-10 h-10 text-white/70" />
