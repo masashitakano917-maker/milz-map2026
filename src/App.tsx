@@ -317,30 +317,42 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
     if (!v) return;
     if (!isActive) {
       try { v.pause(); } catch {}
+      try { v.currentTime = 0; } catch {}
       return;
     }
     let cancelled = false;
+    let retryTimer: number | undefined;
     const attempt = () => {
       if (cancelled || !v) return;
       v.muted = true;
       v.playsInline = true;
       const p = v.play();
       if (p && typeof p.then === 'function') {
-        p.then(() => { if (!cancelled) setStarted(true); }).catch(() => {});
+        p.then(() => {
+          if (!cancelled) setStarted(true);
+        }).catch(() => {
+          if (!cancelled) {
+            retryTimer = window.setTimeout(() => attempt(), 250);
+          }
+        });
+      } else {
+        setStarted(true);
       }
     };
-    if (v.readyState < 2) {
-      try { v.load(); } catch {}
-    }
-    attempt();
+    try { v.load(); } catch {}
     const onCanPlay = () => attempt();
     const onLoadedData = () => attempt();
+    const onLoadedMeta = () => attempt();
     v.addEventListener('canplay', onCanPlay);
     v.addEventListener('loadeddata', onLoadedData);
+    v.addEventListener('loadedmetadata', onLoadedMeta);
+    attempt();
     return () => {
       cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
       v.removeEventListener('canplay', onCanPlay);
       v.removeEventListener('loadeddata', onLoadedData);
+      v.removeEventListener('loadedmetadata', onLoadedMeta);
     };
   }, [isActive, src]);
 
@@ -376,7 +388,7 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
         x5-playsinline="true"
         muted
         loop
-        autoPlay={isActive}
+        autoPlay
         preload={isActive ? 'auto' : 'metadata'}
         controls
       />
@@ -3575,30 +3587,40 @@ function AppMain() {
       shortObserverRef.current = null;
       return;
     }
-    const root = shortsContainerRef.current;
-    if (!root) return;
-    const refs = shortItemRefs.current;
-    const recompute = () => {
-      const rootRect = root.getBoundingClientRect();
-      let topId: string | null = null;
-      let topRatio = 0;
-      refs.forEach((el, id) => {
-        const rect = el.getBoundingClientRect();
-        const visible = Math.max(0, Math.min(rect.bottom, rootRect.bottom) - Math.max(rect.top, rootRect.top));
-        const ratio = visible / Math.max(1, rootRect.height);
-        if (ratio > topRatio) { topRatio = ratio; topId = id; }
-      });
-      if (topId) setActiveShortId(topId);
+    if (shortsFeed.length === 0) return;
+    setActiveShortId((prev) => prev || shortsFeed[0].id);
+    let raf = 0;
+    const tryInit = (attempt = 0) => {
+      const root = shortsContainerRef.current;
+      const refs = shortItemRefs.current;
+      if (!root || refs.size === 0) {
+        if (attempt < 30) raf = window.requestAnimationFrame(() => tryInit(attempt + 1));
+        return;
+      }
+      const recompute = () => {
+        const rootRect = root.getBoundingClientRect();
+        let topId: string | null = null;
+        let topRatio = 0;
+        refs.forEach((el, id) => {
+          const rect = el.getBoundingClientRect();
+          const visible = Math.max(0, Math.min(rect.bottom, rootRect.bottom) - Math.max(rect.top, rootRect.top));
+          const ratio = visible / Math.max(1, rootRect.height);
+          if (ratio > topRatio) { topRatio = ratio; topId = id; }
+        });
+        if (topId) setActiveShortId(topId);
+      };
+      const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
+      shortObserverRef.current = observer;
+      refs.forEach((el) => observer.observe(el));
+      recompute();
     };
-    const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
-    shortObserverRef.current = observer;
-    refs.forEach((el) => observer.observe(el));
-    recompute();
+    tryInit();
     return () => {
-      observer.disconnect();
+      if (raf) window.cancelAnimationFrame(raf);
+      shortObserverRef.current?.disconnect();
       shortObserverRef.current = null;
     };
-  }, [activeTab]);
+  }, [activeTab, shortsFeed]);
 
   const registerShortRef = useCallback((id: string, el: HTMLElement | null) => {
     const refs = shortItemRefs.current;
