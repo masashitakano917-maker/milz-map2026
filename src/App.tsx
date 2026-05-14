@@ -275,7 +275,6 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
     if (!v) return;
     v.muted = true;
     v.playsInline = true;
-    try { v.load(); } catch {}
     const p = v.play();
     if (p && typeof p.then === 'function') {
       p.then(() => setStarted(true)).catch((err) => {
@@ -293,14 +292,6 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
   React.useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (!isActive) {
-      try { v.pause(); } catch {}
-      try { v.currentTime = 0; } catch {}
-      setStarted(false);
-      return;
-    }
-    const onCanPlay = () => { v.play().then(() => setStarted(true)).catch(() => {}); };
-    const onPlaying = () => setStarted(true);
     const onError = () => {
       const code = v.error?.code;
       const codeMap: Record<number, string> = {
@@ -312,23 +303,46 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
       setErrorMsg(code ? codeMap[code] || `error_${code}` : 'unknown');
       setErrored(true);
     };
-    const stallTimer = setTimeout(() => {
-      if (v.readyState < 2 && !v.error) {
-        setErrorMsg('load_timeout');
-        setErrored(true);
-      }
-    }, 12000);
-    v.addEventListener('canplay', onCanPlay);
-    v.addEventListener('playing', onPlaying);
+    const onPlaying = () => setStarted(true);
     v.addEventListener('error', onError);
-    v.play().then(() => setStarted(true)).catch(() => {});
+    v.addEventListener('playing', onPlaying);
     return () => {
-      clearTimeout(stallTimer);
-      v.removeEventListener('canplay', onCanPlay);
-      v.removeEventListener('playing', onPlaying);
       v.removeEventListener('error', onError);
+      v.removeEventListener('playing', onPlaying);
     };
-  }, [src, isActive]);
+  }, [src]);
+
+  React.useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (!isActive) {
+      try { v.pause(); } catch {}
+      return;
+    }
+    let cancelled = false;
+    const attempt = () => {
+      if (cancelled || !v) return;
+      v.muted = true;
+      v.playsInline = true;
+      const p = v.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => { if (!cancelled) setStarted(true); }).catch(() => {});
+      }
+    };
+    if (v.readyState < 2) {
+      try { v.load(); } catch {}
+    }
+    attempt();
+    const onCanPlay = () => attempt();
+    const onLoadedData = () => attempt();
+    v.addEventListener('canplay', onCanPlay);
+    v.addEventListener('loadeddata', onLoadedData);
+    return () => {
+      cancelled = true;
+      v.removeEventListener('canplay', onCanPlay);
+      v.removeEventListener('loadeddata', onLoadedData);
+    };
+  }, [isActive, src]);
 
   if (errored) {
     return (
@@ -352,7 +366,7 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
     <>
       <video
         ref={videoRef}
-        src={isActive ? src : undefined}
+        src={src}
         poster={poster}
         title={placeName}
         className="w-full h-full object-cover"
@@ -362,8 +376,9 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
         x5-playsinline="true"
         muted
         loop
-        preload={isActive ? 'auto' : 'none'}
-        controls={isActive}
+        autoPlay={isActive}
+        preload={isActive ? 'auto' : 'metadata'}
+        controls
       />
       {!started && (
         <button
