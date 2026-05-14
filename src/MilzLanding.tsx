@@ -208,24 +208,24 @@ export default function MilzLanding({
                 t: 'UNKNOWN',
                 s: 'FIRST.',
                 d: isJP
-                  ? 'メジャーはAIに任せる。MILZ が追うのは、まだ名前の知られていない場所、人、サービス。そこにしか残らない空気を、編集で残す。'
-                  : 'AI already covers the mainstream. MILZ follows what is still unnamed — the places, people, and services.',
+                  ? 'マイルズAIは誰もが知る定番ではなく、まだ名前の広がっていない店やスポットを提案します。検索だけでは辿り着けない、"その先"のローカルへ。'
+                  : 'MILZ AI suggests not the staples everyone already knows, but places and spots whose names have yet to spread. A step beyond search — toward the local you cannot reach by query alone.',
               },
               {
                 n: '02',
                 t: 'ATMOSPHERE',
                 s: 'IN DETAIL.',
                 d: isJP
-                  ? '評点ではなく、ディテール。光、音、間、距離感。訪れる前から空気を感じられる情報だけを、ひとつずつ手渡しで。'
-                  : 'Not ratings. Details. Light, sound, pace, distance. Only the notes that let you feel the atmosphere before you arrive — handed over one by one.',
+                  ? 'MILZが伝えたいのは、味やサービスだけではありません。光の入り方。流れる音。人の距離感。街の温度。写真と映像を通して、その場所のディテールまで届けます。'
+                  : 'What MILZ carries isn\'t just taste or service. The way light enters. The sounds drifting through. The distance between people. The temperature of a street. Through photo and film, we hand over every detail of the place.',
               },
               {
                 n: '03',
                 t: 'ONE',
                 s: 'STANDARD.',
                 d: isJP
-                  ? 'ジャンルは関係ない。食、コーヒー、宿、工芸、眺め、人。分野ではなく、ひとつの線引きだけで答える。'
-                  : 'Category is irrelevant. Food, coffee, stays, craft, views, people. One line is drawn — and every answer comes from it.',
+                  ? 'ジャンルやカテゴリーを越えて、普段なら選ばないような場所とも出会える。知らない街へ、知らない感覚へ。そして、少し新しい自分へ。 MILZは、人の一歩を自然に前へ進めるマップです。'
+                  : 'Beyond genre and category — meeting places you would never normally choose. Toward an unknown city, an unknown feeling, and a slightly new version of yourself. MILZ is a map that gently moves you one step forward.',
               },
             ].map((p, i) => (
               <div
