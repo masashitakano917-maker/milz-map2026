@@ -3553,6 +3553,7 @@ function AppMain() {
     return items;
   }, [placeTranslation]);
   const [isMapBoundsFilterEnabled, setIsMapBoundsFilterEnabled] = useState(true);
+  const [allListCityFilter, setAllListCityFilter] = useState<'all' | 'new-york' | 'tokyo' | 'kyoto' | 'seoul' | 'hawaii'>('all');
   const [isFiltering, setIsFiltering] = useState(false);
   const [listFilter, setListFilter] = useState<'home' | 'all' | 'favorites' | 'ai_favorites' | 'ai_trends'>('home');
   const [homeFavTab, setHomeFavTab] = useState<'favorites' | 'ai_favorites' | 'ai_trends'>('favorites');
@@ -6388,9 +6389,7 @@ Return ONLY valid JSON matching the schema.`;
       const matchesCity = !!selectedStation || !locationFilter.cityName || !placeCity || placeCity === locationFilter.cityName || (p.address || '').toLowerCase().includes(locationFilter.cityName.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
       const matchesBadge = selectedBadge === 'all' || (p.badges || []).includes(selectedBadge);
-      const isInBounds = (activeTab === 'list' && listFilter === 'all' && isMapBoundsFilterEnabled && mapBounds)
-        ? mapBounds.contains([p.lat, p.lng])
-        : true;
+      const isInBounds = true;
       const matchesStation = !selectedStation
         || haversineMeters(selectedStation.lat, selectedStation.lng, p.lat, p.lng) <= stationRadius;
       return matchesSearch && matchesArea && matchesCity && matchesCategory && matchesBadge && isInBounds && matchesStation;
@@ -6406,12 +6405,10 @@ Return ONLY valid JSON matching the schema.`;
     return places.filter((p) => {
       const haystack = [p.name, p.description, p.address, p.municipality, p.area_label].filter(Boolean).join(' ').toLowerCase();
       const matchesSearch = haystack.includes(searchQuery.toLowerCase());
-      const isInBounds = (isMapBoundsFilterEnabled && mapBounds)
-        ? mapBounds.contains([p.lat, p.lng])
-        : true;
-      return matchesSearch && isInBounds;
+      const matchesCity = allListCityFilter === 'all' || p.area_key === allListCityFilter;
+      return matchesSearch && matchesCity;
     });
-  }, [activeTab, listFilter, filteredPlaces, places, searchQuery, isMapBoundsFilterEnabled, mapBounds]);
+  }, [activeTab, listFilter, filteredPlaces, places, searchQuery, allListCityFilter]);
 
   const aiFavoritePlaces = useMemo(() => {
     return aiFavorites.filter((item) => {
@@ -7478,23 +7475,28 @@ Return ONLY valid JSON matching the schema.`;
               )}
 
               {listFilter === 'all' && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 md:px-6 bg-white border border-stone-200 rounded-xl shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <MapIcon className="w-5 h-5 text-stone-400" />
-                    <span className="text-[10px] font-black text-stone-500 uppercase tracking-widest">{t('filterByMapArea')}</span>
-                  </div>
-                  <button 
-                    onClick={() => setIsMapBoundsFilterEnabled(!isMapBoundsFilterEnabled)}
-                    className={cn(
-                      "w-12 h-6 transition-all relative rounded-full",
-                      isMapBoundsFilterEnabled ? "bg-black" : "bg-stone-200"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-1 w-4 h-4 bg-white transition-all rounded-full",
-                      isMapBoundsFilterEnabled ? "left-7" : "left-1"
-                    )} />
-                  </button>
+                <div className="flex flex-wrap items-center gap-2 px-4 py-3 md:px-6 bg-white border border-stone-200 rounded-xl shadow-sm">
+                  {([
+                    { key: 'all', label: 'ALL' },
+                    { key: 'new-york', label: 'NEW YORK' },
+                    { key: 'tokyo', label: 'TOKYO' },
+                    { key: 'kyoto', label: 'KYOTO' },
+                    { key: 'seoul', label: 'SEOUL' },
+                    { key: 'hawaii', label: 'HAWAII' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setAllListCityFilter(opt.key)}
+                      className={cn(
+                        "px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.18em] transition-all",
+                        allListCityFilter === opt.key
+                          ? "bg-black text-white border border-black"
+                          : "bg-white text-stone-500 border border-stone-200 hover:border-stone-400 hover:text-stone-800"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               )}
 
