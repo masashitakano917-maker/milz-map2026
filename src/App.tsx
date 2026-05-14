@@ -264,7 +264,7 @@ function getYouTubeEmbedUrl(value?: string | null): string | null {
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
 }
 
-function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; poster?: string; placeName: string; isActive: boolean }) {
+function ShortsDirectVideo({ src, poster, placeName, isActive, shouldLoad }: { src: string; poster?: string; placeName: string; isActive: boolean; shouldLoad: boolean }) {
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
   const [errored, setErrored] = React.useState(false);
   const [started, setStarted] = React.useState(false);
@@ -332,29 +332,32 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
           if (!cancelled) setStarted(true);
         }).catch(() => {
           if (!cancelled) {
-            retryTimer = window.setTimeout(() => attempt(), 250);
+            retryTimer = window.setTimeout(() => attempt(), 400);
           }
         });
       } else {
         setStarted(true);
       }
     };
-    try { v.load(); } catch {}
     const onCanPlay = () => attempt();
-    const onLoadedData = () => attempt();
-    const onLoadedMeta = () => attempt();
     v.addEventListener('canplay', onCanPlay);
-    v.addEventListener('loadeddata', onLoadedData);
-    v.addEventListener('loadedmetadata', onLoadedMeta);
     attempt();
     return () => {
       cancelled = true;
       if (retryTimer) window.clearTimeout(retryTimer);
       v.removeEventListener('canplay', onCanPlay);
-      v.removeEventListener('loadeddata', onLoadedData);
-      v.removeEventListener('loadedmetadata', onLoadedMeta);
     };
   }, [isActive, src]);
+
+  if (!shouldLoad) {
+    return (
+      <div
+        className="w-full h-full bg-cover bg-center bg-stone-950"
+        style={poster ? { backgroundImage: `url(${poster})` } : undefined}
+        aria-label={placeName}
+      />
+    );
+  }
 
   if (errored) {
     return (
@@ -388,9 +391,8 @@ function ShortsDirectVideo({ src, poster, placeName, isActive }: { src: string; 
         x5-playsinline="true"
         muted
         loop
-        autoPlay
-        preload={isActive ? 'auto' : 'metadata'}
-        controls
+        autoPlay={isActive}
+        preload={isActive ? 'auto' : 'none'}
       />
       {!started && (
         <button
@@ -6622,7 +6624,7 @@ Return ONLY valid JSON matching the schema.`;
         });
         if (topId) setActiveShortId(topId);
       };
-      const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
+      const observer = new IntersectionObserver(recompute, { root, threshold: [0.5] });
       shortObserverRef.current = observer;
       refs.forEach((el) => observer.observe(el));
       recompute();
@@ -8654,7 +8656,9 @@ Return ONLY valid JSON matching the schema.`;
                   </div>
                 </div>
               ) : (
-                shortsFeed.map((item) => {
+                (() => { const _activeIdx = shortsFeed.findIndex((s) => s.id === activeShortId); return shortsFeed.map((item, shortIndex) => {
+                  const safeActiveIndex = _activeIdx < 0 ? 0 : _activeIdx;
+                  const shouldLoadShort = Math.abs(shortIndex - safeActiveIndex) <= 1;
                   const isPlaceFav = favorites.some((f) => f.place_id === item.placeId);
                   const websiteLabel = formatWebsiteLabel(item.websiteUrl);
                   const addressLabel = t('addressLabel');
@@ -8751,7 +8755,7 @@ Return ONLY valid JSON matching the schema.`;
                             <div className="w-full max-w-[270px] sm:max-w-[310px] md:max-w-[340px] xl:max-w-[390px]">
                               <div className="relative aspect-[9/16] rounded-[2rem] overflow-hidden border border-white/10 bg-black shadow-[0_35px_100px_rgba(0,0,0,0.45)] max-h-[calc(100svh-16.5rem)] sm:max-h-[calc(100svh-15rem)] xl:max-h-[calc(100svh-8rem)] mx-auto">
                                 {item.playbackType === 'direct' ? (
-                                  <ShortsDirectVideo src={item.url} poster={item.imageUrl} placeName={item.placeName} isActive={isShortActive} />
+                                  <ShortsDirectVideo src={item.url} poster={item.imageUrl} placeName={item.placeName} isActive={isShortActive} shouldLoad={shouldLoadShort} />
                                 ) : item.embedUrl ? (
                                   isShortActive ? (
                                     <iframe
@@ -8898,7 +8902,7 @@ Return ONLY valid JSON matching the schema.`;
                       </div>
                     </section>
                   );
-                })
+                }); })()
               )}
             </motion.div>
           )}
