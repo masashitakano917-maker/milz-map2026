@@ -3580,48 +3580,6 @@ function AppMain() {
 
   const shortObserverRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    if (activeTab !== 'shorts') {
-      setActiveShortId(null);
-      shortObserverRef.current?.disconnect();
-      shortObserverRef.current = null;
-      return;
-    }
-    if (shortsFeed.length === 0) return;
-    setActiveShortId((prev) => prev || shortsFeed[0].id);
-    let raf = 0;
-    const tryInit = (attempt = 0) => {
-      const root = shortsContainerRef.current;
-      const refs = shortItemRefs.current;
-      if (!root || refs.size === 0) {
-        if (attempt < 30) raf = window.requestAnimationFrame(() => tryInit(attempt + 1));
-        return;
-      }
-      const recompute = () => {
-        const rootRect = root.getBoundingClientRect();
-        let topId: string | null = null;
-        let topRatio = 0;
-        refs.forEach((el, id) => {
-          const rect = el.getBoundingClientRect();
-          const visible = Math.max(0, Math.min(rect.bottom, rootRect.bottom) - Math.max(rect.top, rootRect.top));
-          const ratio = visible / Math.max(1, rootRect.height);
-          if (ratio > topRatio) { topRatio = ratio; topId = id; }
-        });
-        if (topId) setActiveShortId(topId);
-      };
-      const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
-      shortObserverRef.current = observer;
-      refs.forEach((el) => observer.observe(el));
-      recompute();
-    };
-    tryInit();
-    return () => {
-      if (raf) window.cancelAnimationFrame(raf);
-      shortObserverRef.current?.disconnect();
-      shortObserverRef.current = null;
-    };
-  }, [activeTab, shortsFeed]);
-
   const registerShortRef = useCallback((id: string, el: HTMLElement | null) => {
     const refs = shortItemRefs.current;
     const prev = refs.get(id);
@@ -6634,6 +6592,48 @@ Return ONLY valid JSON matching the schema.`;
     }
     return shuffled;
   }, [places]);
+
+  useEffect(() => {
+    if (activeTab !== 'shorts') {
+      setActiveShortId(null);
+      shortObserverRef.current?.disconnect();
+      shortObserverRef.current = null;
+      return;
+    }
+    if (shortsFeed.length === 0) return;
+    setActiveShortId((prev) => prev || shortsFeed[0].id);
+    let raf = 0;
+    const tryInit = (attempt = 0) => {
+      const root = shortsContainerRef.current;
+      const refs = shortItemRefs.current;
+      if (!root || refs.size === 0) {
+        if (attempt < 30) raf = window.requestAnimationFrame(() => tryInit(attempt + 1));
+        return;
+      }
+      const recompute = () => {
+        const rootRect = root.getBoundingClientRect();
+        let topId: string | null = null;
+        let topRatio = 0;
+        refs.forEach((el, id) => {
+          const rect = el.getBoundingClientRect();
+          const visible = Math.max(0, Math.min(rect.bottom, rootRect.bottom) - Math.max(rect.top, rootRect.top));
+          const ratio = visible / Math.max(1, rootRect.height);
+          if (ratio > topRatio) { topRatio = ratio; topId = id; }
+        });
+        if (topId) setActiveShortId(topId);
+      };
+      const observer = new IntersectionObserver(recompute, { root, threshold: [0.25, 0.5, 0.75, 0.9] });
+      shortObserverRef.current = observer;
+      refs.forEach((el) => observer.observe(el));
+      recompute();
+    };
+    tryInit();
+    return () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      shortObserverRef.current?.disconnect();
+      shortObserverRef.current = null;
+    };
+  }, [activeTab, shortsFeed]);
 
   if (isConfigMissing) {
     return (
