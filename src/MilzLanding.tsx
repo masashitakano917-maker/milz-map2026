@@ -208,8 +208,8 @@ export default function MilzLanding({
                 t: 'UNKNOWN',
                 s: 'FIRST.',
                 d: isJP
-                  ? 'マイルズAIは誰もが知る定番ではなく、まだ名前の広がっていない店やスポットを提案します。検索だけでは辿り着けない、"その先"のローカルへ。'
-                  : 'MILZ AI suggests not the staples everyone already knows, but places and spots whose names have yet to spread. A step beyond search — toward the local you cannot reach by query alone.',
+                  ? 'MILZは誰もが知る定番ではなく、まだ名前の広がっていない店やスポットを提案します。検索だけでは辿り着けない、"その先"のローカルへ。'
+                  : 'MILZ suggests not the staples everyone already knows, but places and spots whose names have yet to spread. A step beyond search — toward the local you cannot reach by query alone.',
               },
               {
                 n: '02',
