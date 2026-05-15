@@ -80,7 +80,8 @@ const isLikelyIosCompatibleMp4 = async (file: File): Promise<boolean> => {
 export async function transcodeToIosMp4(file: File, opts: TranscodeOptions = {}): Promise<File> {
   const { onStatus, onProgress } = opts;
 
-  if (await isLikelyIosCompatibleMp4(file)) {
+  const SKIP_TRANSCODE_MAX_BYTES = 8 * 1024 * 1024;
+  if (file.size <= SKIP_TRANSCODE_MAX_BYTES && await isLikelyIosCompatibleMp4(file)) {
     onStatus?.('Already iOS-compatible MP4. Skipping transcode.');
     return file;
   }
@@ -104,14 +105,18 @@ export async function transcodeToIosMp4(file: File, opts: TranscodeOptions = {})
     onStatus?.('Transcoding to H.264 / AAC MP4...');
     await ff.exec([
       '-i', inputName,
+      '-vf', "scale='if(gt(iw,ih),min(1280,iw),-2)':'if(gt(iw,ih),-2,min(1280,ih))',fps=30",
       '-c:v', 'libx264',
       '-profile:v', 'main',
       '-level', '4.0',
       '-pix_fmt', 'yuv420p',
       '-preset', 'veryfast',
-      '-crf', '23',
+      '-crf', '26',
+      '-maxrate', '2200k',
+      '-bufsize', '4400k',
       '-c:a', 'aac',
-      '-b:a', '128k',
+      '-b:a', '96k',
+      '-ac', '2',
       '-movflags', '+faststart',
       outputName,
     ]);

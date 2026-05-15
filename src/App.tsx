@@ -8660,7 +8660,20 @@ Return ONLY valid JSON matching the schema.`;
               ) : (
                 (() => { const _activeIdx = shortsFeed.findIndex((s) => s.id === activeShortId); return shortsFeed.map((item, shortIndex) => {
                   const safeActiveIndex = _activeIdx < 0 ? 0 : _activeIdx;
-                  const shouldLoadShort = Math.abs(shortIndex - safeActiveIndex) <= 1;
+                  const distFromActive = Math.abs(shortIndex - safeActiveIndex);
+                  const shouldLoadShort = distFromActive <= 1;
+                  const shouldRenderInner = distFromActive <= 2;
+                  if (!shouldRenderInner) {
+                    return (
+                      <section
+                        key={item.id}
+                        ref={(el) => registerShortRef(item.id, el)}
+                        data-short-id={item.id}
+                        className="min-h-[calc(100svh-7rem)] snap-start"
+                        aria-hidden="true"
+                      />
+                    );
+                  }
                   const isPlaceFav = favorites.some((f) => f.place_id === item.placeId);
                   const websiteLabel = formatWebsiteLabel(item.websiteUrl);
                   const addressLabel = t('addressLabel');
