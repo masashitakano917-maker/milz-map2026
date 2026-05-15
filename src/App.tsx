@@ -3866,6 +3866,11 @@ function AppMain() {
   const [placeEditorVideosText, setPlaceEditorVideosText] = useState('');
   const [videoTranscodeStatus, setVideoTranscodeStatus] = useState<string>('');
   const [videoTranscodeProgress, setVideoTranscodeProgress] = useState<number>(0);
+  const [bulkReencodeRunning, setBulkReencodeRunning] = useState(false);
+  const [bulkReencodeStatus, setBulkReencodeStatus] = useState<string>('');
+  const [bulkReencodeDone, setBulkReencodeDone] = useState(0);
+  const [bulkReencodeTotal, setBulkReencodeTotal] = useState(0);
+  const bulkReencodeCancelRef = React.useRef(false);
   const isFetchingProfileRef = useRef(false);
 
   const mapRef = useRef<MapNavigator | null>(null);
@@ -5156,6 +5161,107 @@ function AppMain() {
     }
     return uploadedUrls;
   }, [ensureMp4VideoFile, validatePlayableVideoFile]);
+
+  const handleBulkReencodeShorts = React.useCallback(async () => {
+    const client = getSupabase();
+    if (!client) {
+      showToast(locale === 'jp' ? 'Supabase接続がありません' : 'Supabase client unavailable', 'error');
+      return;
+    }
+    const SIZE_THRESHOLD_BYTES = 8 * 1024 * 1024;
+    const targets: Array<{ place: Place; url: string; index: number }> = [];
+    places.forEach((p) => {
+      (p.videos || []).forEach((url, index) => {
+        if (typeof url !== 'string') return;
+        if (!isLikelyVideoUrl(url)) return;
+        if (extractYouTubeVideoId(url)) return;
+        targets.push({ place: p, url, index });
+      });
+    });
+    if (targets.length === 0) {
+      showToast(locale === 'jp' ? '対象の動画がありません' : 'No direct videos to re-encode', 'success');
+      return;
+    }
+    if (!window.confirm(locale === 'jp'
+      ? `${targets.length}件の動画を確認・再エンコードします。よろしいですか？`
+      : `Re-encode ${targets.length} video(s)?`)) {
+      return;
+    }
+    bulkReencodeCancelRef.current = false;
+    setBulkReencodeRunning(true);
+    setBulkReencodeDone(0);
+    setBulkReencodeTotal(targets.length);
+    setBulkReencodeStatus(locale === 'jp' ? '開始中...' : 'Starting...');
+    let processed = 0;
+    let skipped = 0;
+    let failed = 0;
+    try {
+      for (const target of targets) {
+        if (bulkReencodeCancelRef.current) break;
+        setBulkReencodeStatus(locale === 'jp'
+          ? `${target.place.name} を確認中...`
+          : `Checking ${target.place.name}...`);
+        try {
+          const headRes = await fetch(target.url, { method: 'HEAD' });
+          const lenHeader = headRes.headers.get('content-length');
+          const len = lenHeader ? parseInt(lenHeader, 10) : NaN;
+          if (Number.isFinite(len) && len > 0 && len <= SIZE_THRESHOLD_BYTES) {
+            skipped += 1;
+            setBulkReencodeDone((n) => n + 1);
+            continue;
+          }
+          setBulkReencodeStatus(locale === 'jp'
+            ? `${target.place.name} をダウンロード中...`
+            : `Downloading ${target.place.name}...`);
+          const res = await fetch(target.url);
+          if (!res.ok) throw new Error(`download ${res.status}`);
+          const blob = await res.blob();
+          const baseName = (target.url.split('/').pop() || 'video').split('?')[0] || 'video';
+          const file = new File([blob], baseName, { type: blob.type || 'video/mp4' });
+
+          setBulkReencodeStatus(locale === 'jp'
+            ? `${target.place.name} を変換中...`
+            : `Transcoding ${target.place.name}...`);
+          const transcoded = await transcodeToIosMp4(file, {
+            onStatus: (msg) => setVideoTranscodeStatus(msg),
+            onProgress: (ratio) => setVideoTranscodeProgress(ratio),
+          });
+
+          setBulkReencodeStatus(locale === 'jp'
+            ? `${target.place.name} をアップロード中...`
+            : `Uploading ${target.place.name}...`);
+          const uploadedUrl = await uploadToR2(transcoded);
+          if (!uploadedUrl) throw new Error('upload failed');
+
+          const currentVideos = [...(target.place.videos || [])];
+          currentVideos[target.index] = uploadedUrl;
+          const { error: updateErr } = await client
+            .from('admin_places')
+            .update({ videos: currentVideos })
+            .eq('id', target.place.id);
+          if (updateErr) throw updateErr;
+
+          target.place.videos = currentVideos;
+          setPlaces((prev) => prev.map((p) => p.id === target.place.id ? { ...p, videos: currentVideos } : p));
+          processed += 1;
+        } catch (err: any) {
+          failed += 1;
+          addLog(`bulk re-encode failed for ${target.place.name}: ${err?.message || err}`);
+        } finally {
+          setBulkReencodeDone((n) => n + 1);
+          setVideoTranscodeStatus('');
+          setVideoTranscodeProgress(0);
+        }
+      }
+      const summary = locale === 'jp'
+        ? `完了: 変換${processed}件 / スキップ${skipped}件 / 失敗${failed}件`
+        : `Done: ${processed} re-encoded, ${skipped} skipped, ${failed} failed`;
+      showToast(summary, failed > 0 ? 'error' : 'success');
+    } finally {
+      setBulkReencodeRunning(false);
+      setBulkReencodeStatus('');
+    }
+  }, [places, locale]);
 
   const handlePlaceVideoFilesDrop = async (files: File[]) => {
     if (files.length === 0) return;
@@ -9374,6 +9480,46 @@ Return ONLY valid JSON matching the schema.`;
                         </section>
 
                         <div className="space-y-3">
+                        <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-stone-400">Shorts</div>
+                            <div className="mt-1 text-sm font-black tracking-tight text-black">{locale === 'jp' ? '既存動画を一括再エンコード' : 'Bulk re-encode existing videos'}</div>
+                            <p className="mt-1 text-[11px] text-stone-500 leading-relaxed">{locale === 'jp' ? '8MBを超える動画を1080p / 30fps / 約2Mbpsに圧縮し直し、Storageの参照を置き換えます。重い処理なので回線が安定した状態で実行してください。' : 'Compresses videos >8MB to 1080p / 30fps / ~2Mbps and replaces the storage reference. Run on a stable connection.'}</p>
+                          </div>
+                          {bulkReencodeRunning && (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.18em] text-stone-500">
+                                <span className="truncate pr-2">{bulkReencodeStatus}</span>
+                                <span>{bulkReencodeDone}/{bulkReencodeTotal}</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden">
+                                <div className="h-full bg-black transition-all" style={{ width: `${bulkReencodeTotal === 0 ? 0 : Math.round((bulkReencodeDone / bulkReencodeTotal) * 100)}%` }} />
+                              </div>
+                              {videoTranscodeStatus && (
+                                <div className="text-[10px] text-stone-500 truncate">{videoTranscodeStatus} {videoTranscodeProgress > 0 ? `${Math.round(videoTranscodeProgress * 100)}%` : ''}</div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleBulkReencodeShorts}
+                              disabled={bulkReencodeRunning}
+                              className="flex-1 py-3 text-[10px] font-black text-white uppercase tracking-[0.24em] bg-black rounded-xl disabled:opacity-50"
+                            >
+                              {bulkReencodeRunning
+                                ? (locale === 'jp' ? '実行中...' : 'Running...')
+                                : (locale === 'jp' ? '一括再エンコード開始' : 'Start bulk re-encode')}
+                            </button>
+                            {bulkReencodeRunning && (
+                              <button
+                                onClick={() => { bulkReencodeCancelRef.current = true; }}
+                                className="px-4 py-3 text-[10px] font-black text-stone-700 uppercase tracking-[0.22em] border border-stone-300 rounded-xl bg-white"
+                              >
+                                {locale === 'jp' ? '停止' : 'Stop'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                         <button
                           onClick={async () => {
                             addLog('Manual Connection Test: Starting...');
