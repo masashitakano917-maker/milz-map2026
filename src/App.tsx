@@ -7,6 +7,9 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { getSupabase, testSupabaseConnection, resetSupabaseClient, trackEvent } from './supabase';
+import { parseUrlList, isLikelyImageUrl } from './utils/url';
+import { extractYouTubeVideoId, getYouTubeEmbedUrl } from './utils/youtube';
+import { isLikelyVideoUrl, preferPlayableVideoUrls, normalizeStoredVideoUrlList } from './utils/video';
 import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowRight, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
 
 // DropZone component for drag & drop uploads
@@ -130,138 +133,6 @@ async function callGeminiProxy(payload: { model: string; contents: any; config?:
     throw new Error(message);
   }
   return JSON.parse(text) as { text: string };
-}
-
-function parseUrlList(raw?: string | null): string[] {
-  if (!raw) return [];
-  return raw
-    .split(/[\n,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function isLikelyVideoUrl(url?: string | null): boolean {
-  const value = (url || '').trim().toLowerCase();
-  if (!value) return false;
-  if (extractYouTubeVideoId(value)) return true;
-  return /\.(mp4|m4v|mov|webm|ogg)(\?|$)/i.test(value) || value.startsWith('data:video/');
-}
-
-function getVideoPreferenceScore(url: string) {
-  const value = url.toLowerCase();
-  if (/\.mp4(\?|$)/.test(value)) return 5;
-  if (/\.m4v(\?|$)/.test(value)) return 4;
-  if (/\.webm(\?|$)/.test(value)) return 3;
-  if (/\.ogg(\?|$)/.test(value)) return 2;
-  if (/\.mov(\?|$)/.test(value)) return 1;
-  return 0;
-}
-
-function getVideoComparableStem(url?: string | null) {
-  const raw = (url || '').trim();
-  if (!raw) return '';
-  const youtubeId = extractYouTubeVideoId(raw);
-  if (youtubeId) return `youtube::${youtubeId}`;
-
-  try {
-    const parsed = new URL(raw, typeof window !== 'undefined' ? window.location.origin : 'https://example.com');
-    const filename = decodeURIComponent(parsed.pathname.split('/').pop() || '').toLowerCase();
-    const withoutExt = filename.replace(/\.[^.]+$/, '');
-    const afterCopy = withoutExt.includes('copy_') ? withoutExt.split('copy_').pop() || withoutExt : withoutExt;
-    return afterCopy.replace(/^[0-9a-f-]{8,}-/i, '');
-  } catch {
-    const filename = raw.toLowerCase().split('/').pop() || raw.toLowerCase();
-    const withoutExt = filename.replace(/\.[^.]+$/, '');
-    const afterCopy = withoutExt.includes('copy_') ? withoutExt.split('copy_').pop() || withoutExt : withoutExt;
-    return afterCopy.replace(/^[0-9a-f-]{8,}-/i, '');
-  }
-}
-
-function preferPlayableVideoUrls(urls: string[]): string[] {
-  const normalized = urls.filter(Boolean);
-  const chosen = new Map<string, string>();
-  const order: string[] = [];
-
-  normalized.forEach((url) => {
-    const stem = getVideoComparableStem(url) || url;
-    const existing = chosen.get(stem);
-    if (!existing) {
-      chosen.set(stem, url);
-      order.push(stem);
-      return;
-    }
-
-    if (getVideoPreferenceScore(url) > getVideoPreferenceScore(existing)) {
-      chosen.set(stem, url);
-    }
-  });
-
-  return order.map((stem) => chosen.get(stem)!).filter(Boolean);
-}
-
-function normalizeStoredVideoUrlList(raw?: string | null): string[] {
-  const urls = parseUrlList(raw)
-    .map((value) => {
-      const trimmed = value.trim();
-      if (!trimmed) return null;
-      const videoId = extractYouTubeVideoId(trimmed);
-      if (videoId) return `https://www.youtube.com/watch?v=${videoId}`;
-      if (isLikelyVideoUrl(trimmed)) return trimmed;
-      return null;
-    })
-    .filter((value): value is string => !!value);
-
-  return preferPlayableVideoUrls(urls);
-}
-
-function isLikelyImageUrl(url?: string | null): boolean {
-  const value = (url || '').trim().toLowerCase();
-  if (!value) return false;
-  return /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?|$)/i.test(value) || value.startsWith('data:image/') || value.includes('/images/') || value.includes('imagekit') || value.includes('imgix') || value.includes('cloudinary');
-}
-
-function extractYouTubeVideoId(value?: string | null): string | null {
-  const raw = (value || '').trim();
-  if (!raw) return null;
-
-  if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) {
-    return raw;
-  }
-
-  try {
-    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    const url = new URL(normalized);
-    const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '');
-
-    if (host === 'youtu.be') {
-      return url.pathname.split('/').filter(Boolean)[0] || null;
-    }
-
-    if (host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com')) {
-      if (url.pathname.startsWith('/watch')) {
-        return url.searchParams.get('v');
-      }
-      if (url.pathname.startsWith('/shorts/')) {
-        return url.pathname.split('/').filter(Boolean)[1] || null;
-      }
-      if (url.pathname.startsWith('/embed/')) {
-        return url.pathname.split('/').filter(Boolean)[1] || null;
-      }
-      if (url.pathname.startsWith('/live/')) {
-        return url.pathname.split('/').filter(Boolean)[1] || null;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function getYouTubeEmbedUrl(value?: string | null): string | null {
-  const videoId = extractYouTubeVideoId(value);
-  if (!videoId) return null;
-  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
 }
 
 function ShortsDirectVideo({ src, poster, placeName, isActive, shouldLoad }: { src: string; poster?: string; placeName: string; isActive: boolean; shouldLoad: boolean }) {
