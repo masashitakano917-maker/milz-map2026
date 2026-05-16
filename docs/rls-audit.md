@@ -15,11 +15,15 @@ Re-run with the SQL at the bottom of this file.
 
 ## Findings
 
-### Fixed in migration `20260516_tighten_profiles_select`
+### Fixed
 
 - `profiles` exposed `email` to anonymous users via `Public profiles are viewable USING (true) TO public`.
   - All call sites read profiles inside authenticated flows (admin views, signed-in user checks).
   - Tightened SELECT role from `public` → `authenticated`.
+- `admin_places` write policies allowed any authenticated user whose `auth.uid()`
+  matched `created_by` to INSERT/UPDATE/DELETE rows. Spot management is admin-only
+  per product spec; the front-end UI hid the controls but the API was open.
+  Replaced with admin-only INSERT/UPDATE/DELETE policies. Public SELECT unchanged.
 
 ### Accepted as designed
 
@@ -51,9 +55,9 @@ admin_filter_options
 
 admin_places
   SELECT  public         USING (true)
-  INSERT  authenticated  WITH CHECK (created_by = auth.uid() OR admin)
-  UPDATE  authenticated  USING (...) / WITH CHECK (...)
-  DELETE  authenticated  USING (...)
+  INSERT  authenticated  WITH CHECK (admin)
+  UPDATE  authenticated  USING (admin) / WITH CHECK (admin)
+  DELETE  authenticated  USING (admin)
 
 ai_cache
   SELECT  public         USING (true)
