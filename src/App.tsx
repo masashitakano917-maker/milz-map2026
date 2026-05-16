@@ -3338,6 +3338,73 @@ function AppMain() {
   const [isEditingDetail, setIsEditingDetail] = useState(false);
   const [editDetailForm, setEditDetailForm] = useState<Partial<Place>>({});
   const [isUpdatingDetail, setIsUpdatingDetail] = useState(false);
+  const detailUrlPushedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const currentPlaceParam = url.searchParams.get('place');
+
+    if (selectedPlaceForDetail) {
+      if (currentPlaceParam === selectedPlaceForDetail.id) return;
+      url.searchParams.set('place', selectedPlaceForDetail.id);
+      if (detailUrlPushedRef.current) {
+        window.history.replaceState({ place: selectedPlaceForDetail.id }, '', url.toString());
+      } else {
+        window.history.pushState({ place: selectedPlaceForDetail.id }, '', url.toString());
+        detailUrlPushedRef.current = true;
+      }
+    } else if (currentPlaceParam) {
+      url.searchParams.delete('place');
+      const target = url.pathname + (url.search ? url.search : '') + url.hash;
+      if (detailUrlPushedRef.current) {
+        window.history.back();
+        detailUrlPushedRef.current = false;
+      } else {
+        window.history.replaceState(null, '', target);
+      }
+    }
+  }, [selectedPlaceForDetail]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const placeId = params.get('place');
+      detailUrlPushedRef.current = false;
+      if (!placeId) {
+        setSelectedPlaceForDetail(null);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const deepLinkAppliedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (deepLinkAppliedRef.current) return;
+    if (!places || places.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const placeId = params.get('place');
+    if (!placeId) {
+      deepLinkAppliedRef.current = true;
+      return;
+    }
+    const found = places.find((p) => p.id === placeId);
+    if (found) {
+      deepLinkAppliedRef.current = true;
+      setSelectedPlaceForDetail({
+        ...found,
+        images: [...(found.images || [])],
+        videos: [...(found.videos || [])],
+        pdfs: [...(found.pdfs || [])],
+        reviews: [...(found.reviews || [])],
+        badges: [...(found.badges || [])],
+        from_spot_items: [...(found.from_spot_items || [])],
+      });
+    }
+  }, [places]);
 
   useEffect(() => {
     if (!selectedPlaceForDetail) return;
@@ -10039,10 +10106,26 @@ Return ONLY valid JSON matching the schema.`;
                     >
                       <Heart className={cn("w-8 h-8", favorites.some(f => f.place_id === selectedPlaceForDetail.id) && "fill-current")} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
-                        showToast("Link copied to clipboard", "success");
+                        const shareUrl = (() => {
+                          if (typeof window === 'undefined') return '';
+                          const u = new URL(window.location.href);
+                          u.searchParams.set('place', selectedPlaceForDetail.id);
+                          return u.toString();
+                        })();
+                        if (navigator.share) {
+                          navigator.share({
+                            title: selectedPlaceForDetail.name,
+                            url: shareUrl,
+                          }).catch(() => {
+                            navigator.clipboard.writeText(shareUrl);
+                            showToast("Link copied to clipboard", "success");
+                          });
+                        } else {
+                          navigator.clipboard.writeText(shareUrl);
+                          showToast("Link copied to clipboard", "success");
+                        }
                       }}
                       className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-all active:scale-95"
                     >
