@@ -260,8 +260,8 @@ const buildAreaHtml = (area) => {
 
   let html = template;
   html = html.replace(
-    /<title>[\s\S]*?<\/title>[\s\S]*?<\/head>/,
-    `${headInjection}\n  </head>`
+    /(<meta name="theme-color"[^>]*>)\s*[\s\S]*?(<script type="module")/,
+    `$1\n${headInjection}\n    $2`
   );
   html = html.replace(/<div id="root"><\/div>/, `<div id="root"></div>${noscriptBlock}`);
   html = html.replace(
@@ -391,8 +391,8 @@ function buildSpotHtml(spot) {
 
   let html = template;
   html = html.replace(
-    /<title>[\s\S]*?<\/title>[\s\S]*?<\/head>/,
-    `${headInjection}\n  </head>`
+    /(<meta name="theme-color"[^>]*>)\s*[\s\S]*?(<script type="module")/,
+    `$1\n${headInjection}\n    $2`
   );
   html = html.replace(/<div id="root"><\/div>/, `<div id="root"></div>${noscriptBlock}`);
   html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`);
