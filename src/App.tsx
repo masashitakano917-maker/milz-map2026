@@ -3342,11 +3342,11 @@ function AppMain() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const areaKey = locationFilter.areaKey || 'tokyo';
 
     if (selectedPlaceForDetail) {
       const slug = toPlaceSlug(selectedPlaceForDetail.name);
-      const spotArea = selectedPlaceForDetail.area_key || areaKey;
+      const currentArea = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || 'tokyo';
+      const spotArea = selectedPlaceForDetail.area_key || currentArea;
       const targetPath = `/${spotArea}/${slug}`;
       if (window.location.pathname === targetPath) return;
       if (detailUrlPushedRef.current) {
@@ -3367,7 +3367,7 @@ function AppMain() {
         }
       }
     }
-  }, [selectedPlaceForDetail, locationFilter.areaKey]);
+  }, [selectedPlaceForDetail]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
