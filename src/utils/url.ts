@@ -1,3 +1,13 @@
+export function toPlaceSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\u3000-\u9fff\uac00-\ud7af]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    || 'spot';
+}
+
 export function parseUrlList(raw?: string | null): string[] {
   if (!raw) return [];
   return raw

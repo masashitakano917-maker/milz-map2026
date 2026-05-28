@@ -1,13 +1,28 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { config } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: join(__dirname, '..', '.env') });
+
 const distDir = join(__dirname, '..', 'dist');
 const templatePath = join(distDir, 'index.html');
 const template = readFileSync(templatePath, 'utf8');
 
 const SITE = 'https://milz-map.com';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+function toPlaceSlug(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\u3000-\u9fff\uac00-\ud7af]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    || 'spot';
+}
 
 const AREAS = [
   {
@@ -264,11 +279,153 @@ for (const area of AREAS) {
   console.log(`prerendered /${area.slug}/`);
 }
 
+// --- Spot pages from Supabase ---
+
+const AREA_GEO_MAP = Object.fromEntries(AREAS.map((a) => [a.slug, a]));
+
+async function fetchAllSpots() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.warn('Supabase env vars missing — skipping spot prerender');
+    return [];
+  }
+  const spots = [];
+
+  // admin_places
+  const adminRes = await fetch(`${SUPABASE_URL}/rest/v1/admin_places?select=id,name,description,detailed_description,category,lat,lng,address,area_key,area_label,image_url,hours,rating,review_count`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (adminRes.ok) {
+    const data = await adminRes.json();
+    for (const row of data) {
+      spots.push({ ...row, source: 'admin' });
+    }
+  }
+
+  // ai_trend_spots
+  const trendRes = await fetch(`${SUPABASE_URL}/rest/v1/ai_trend_spots?select=id,name,name_jp,description,category,lat,lng,address,area_key,city_name,website_url,image_url,trend_score&order=trend_score.desc`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  });
+  if (trendRes.ok) {
+    const data = await trendRes.json();
+    for (const row of data) {
+      spots.push({ ...row, source: 'trend' });
+    }
+  }
+
+  return spots;
+}
+
+function buildSpotHtml(spot) {
+  const areaKey = spot.area_key || 'tokyo';
+  const slug = toPlaceSlug(spot.name);
+  const url = `${SITE}/${areaKey}/${slug}`;
+  const ogImage = spot.image_url || `${SITE}/og-image-milz-v2.png`;
+  const areaData = AREA_GEO_MAP[areaKey];
+  const areaName = areaData ? areaData.geo.name : areaKey;
+  const isJapanese = ['tokyo', 'kyoto'].includes(areaKey);
+  const lang = isJapanese ? 'ja' : 'en';
+
+  const title = `${spot.name}${spot.category ? ` — ${spot.category}` : ''} | ${areaName} | MILZ`;
+  const desc = spot.detailed_description || spot.description || `${spot.name} in ${areaName}. Discover this spot on MILZ curated travel map.`;
+
+  const jsonLdPlace = {
+    '@context': 'https://schema.org',
+    '@type': spot.category && /restaurant|dining|food|ramen|sushi|steak|mexican|italian|french|hawaiian|korean/i.test(spot.category) ? 'Restaurant' : 'LocalBusiness',
+    name: spot.name,
+    url,
+    description: desc,
+    ...(spot.address && { address: { '@type': 'PostalAddress', streetAddress: spot.address } }),
+    ...(spot.lat && spot.lng && { geo: { '@type': 'GeoCoordinates', latitude: spot.lat, longitude: spot.lng } }),
+    ...(spot.rating && { aggregateRating: { '@type': 'AggregateRating', ratingValue: spot.rating, bestRating: 5, ratingCount: spot.review_count || 1 } }),
+    ...(spot.image_url && { image: spot.image_url }),
+    ...(spot.hours && { openingHours: spot.hours }),
+  };
+
+  const jsonLdBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'MILZ', item: SITE },
+      { '@type': 'ListItem', position: 2, name: areaName, item: `${SITE}/${areaKey}/` },
+      { '@type': 'ListItem', position: 3, name: spot.name, item: url },
+    ],
+  };
+
+  const headInjection = `
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(desc.slice(0, 160))}" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="${url}" />
+    <meta property="og:type" content="place" />
+    <meta property="og:site_name" content="MILZ" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(desc.slice(0, 160))}" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:image" content="${escapeHtml(ogImage)}" />
+    <meta property="og:image:alt" content="${escapeHtml(spot.name)}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(desc.slice(0, 160))}" />
+    <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
+    ${spot.lat && spot.lng ? `<meta name="geo.position" content="${spot.lat};${spot.lng}" />` : ''}
+    <script type="application/ld+json">${JSON.stringify(jsonLdPlace)}</script>
+    <script type="application/ld+json">${JSON.stringify(jsonLdBreadcrumb)}</script>
+    <script>window.__MILZ_INITIAL_AREA__=${JSON.stringify(areaKey)};window.__MILZ_INITIAL_SPOT__=${JSON.stringify(spot.id)};</script>
+  `;
+
+  const noscriptBlock = `
+    <noscript>
+      <article style="font-family:system-ui;max-width:720px;margin:2rem auto;padding:0 1.25rem;">
+        <nav style="font-size:0.75rem;color:#666;margin-bottom:1rem;">
+          <a href="/" style="color:#333;">MILZ</a> &rsaquo;
+          <a href="/${areaKey}/" style="color:#333;">${escapeHtml(areaName)}</a> &rsaquo;
+          ${escapeHtml(spot.name)}
+        </nav>
+        <h1 style="font-size:1.75rem;font-weight:800;margin:0 0 .5rem;">${escapeHtml(spot.name)}</h1>
+        ${spot.category ? `<p style="color:#666;font-size:0.875rem;margin:0 0 0.75rem;">${escapeHtml(spot.category)}${spot.address ? ` — ${escapeHtml(spot.address)}` : ''}</p>` : ''}
+        <p style="color:#444;line-height:1.6;">${escapeHtml(desc)}</p>
+        <p style="margin-top:1rem;"><a href="/${areaKey}/" style="color:#0066cc;">View all spots in ${escapeHtml(areaName)}</a></p>
+      </article>
+    </noscript>
+  `;
+
+  let html = template;
+  html = html.replace(
+    /<title>[\s\S]*?<\/title>[\s\S]*?<\/head>/,
+    `${headInjection}\n  </head>`
+  );
+  html = html.replace(/<div id="root"><\/div>/, `<div id="root"></div>${noscriptBlock}`);
+  html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`);
+  return html;
+}
+
+const spots = await fetchAllSpots();
+const spotSitemapEntries = [];
+const seenSlugs = new Set();
+
+for (const spot of spots) {
+  const areaKey = spot.area_key || 'tokyo';
+  const slug = toPlaceSlug(spot.name);
+  const uniqueKey = `${areaKey}/${slug}`;
+  if (seenSlugs.has(uniqueKey)) continue;
+  seenSlugs.add(uniqueKey);
+
+  const html = buildSpotHtml(spot);
+  const outDir = join(distDir, areaKey, slug);
+  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, 'index.html'), html, 'utf8');
+  spotSitemapEntries.push({ loc: `${SITE}/${areaKey}/${slug}`, priority: '0.7', changefreq: 'weekly' });
+}
+console.log(`prerendered ${spotSitemapEntries.length} spot pages`);
+
+// --- Sitemap ---
+
 const today = new Date().toISOString().slice(0, 10);
 
 const sitemapEntries = [
   { loc: `${SITE}/`, priority: '1.0', changefreq: 'daily' },
   ...AREAS.map((a) => ({ loc: `${SITE}/${a.slug}/`, priority: '0.9', changefreq: 'weekly' })),
+  ...spotSitemapEntries,
 ];
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -282,4 +439,4 @@ ${sitemapEntries
 </urlset>
 `;
 writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');
-console.log('sitemap.xml written');
+console.log(`sitemap.xml written (${sitemapEntries.length} URLs)`);

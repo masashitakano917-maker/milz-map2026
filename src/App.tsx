@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { getSupabase, testSupabaseConnection, resetSupabaseClient, trackEvent } from './supabase';
-import { parseUrlList, isLikelyImageUrl } from './utils/url';
+import { parseUrlList, isLikelyImageUrl, toPlaceSlug } from './utils/url';
 import { extractYouTubeVideoId, getYouTubeEmbedUrl } from './utils/youtube';
 import { isLikelyVideoUrl, preferPlayableVideoUrls, normalizeStoredVideoUrlList } from './utils/video';
 import { MapPin, LogIn, LogOut, Plus, X, ExternalLink, Navigation, ShieldCheck, User as UserIcon, Loader as Loader2, Map as MapIcon, List as ListIcon, Search, ListFilter as Filter, SlidersHorizontal, ChevronRight, Info, Trash2, Utensils, ShoppingBag, MoveHorizontal as MoreHorizontal, Heart, Sparkles, Globe, MapPinned, Send, TrendingUp, CircleAlert as AlertCircle, Hash, Languages, Coffee, Gift, Ticket, Mail, Lock, Eye, EyeOff, UserPlus, Camera, Image as ImageIcon, CircleCheck as CheckCircle2, Copy, Trees, Brain as Train, CircleParking as ParkingCircle, School, Store, Pencil, FileText, Video, Play, ArrowLeft, ArrowRight, ArrowUpRight, Star, Clock, Share2, CreditCard as Edit, Bookmark, MessageSquare, Award, Save, Upload, Layers as Layers3, Landmark, ChevronUp } from 'lucide-react';
@@ -3342,69 +3342,90 @@ function AppMain() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const url = new URL(window.location.href);
-    const currentPlaceParam = url.searchParams.get('place');
+    const areaKey = locationFilter.areaKey || 'tokyo';
 
     if (selectedPlaceForDetail) {
-      if (currentPlaceParam === selectedPlaceForDetail.id) return;
-      url.searchParams.set('place', selectedPlaceForDetail.id);
+      const slug = toPlaceSlug(selectedPlaceForDetail.name);
+      const spotArea = selectedPlaceForDetail.area_key || areaKey;
+      const targetPath = `/${spotArea}/${slug}`;
+      if (window.location.pathname === targetPath) return;
       if (detailUrlPushedRef.current) {
-        window.history.replaceState({ place: selectedPlaceForDetail.id }, '', url.toString());
+        window.history.replaceState({ placeId: selectedPlaceForDetail.id }, '', targetPath);
       } else {
-        window.history.pushState({ place: selectedPlaceForDetail.id }, '', url.toString());
+        window.history.pushState({ placeId: selectedPlaceForDetail.id }, '', targetPath);
         detailUrlPushedRef.current = true;
       }
-    } else if (currentPlaceParam) {
-      url.searchParams.delete('place');
-      const target = url.pathname + (url.search ? url.search : '') + url.hash;
-      if (detailUrlPushedRef.current) {
-        window.history.back();
-        detailUrlPushedRef.current = false;
-      } else {
-        window.history.replaceState(null, '', target);
+    } else {
+      const segments = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+      if (segments.length >= 2 && segments[1]) {
+        const areaPath = `/${segments[0]}/`;
+        if (detailUrlPushedRef.current) {
+          window.history.back();
+          detailUrlPushedRef.current = false;
+        } else {
+          window.history.replaceState(null, '', areaPath);
+        }
       }
     }
-  }, [selectedPlaceForDetail]);
+  }, [selectedPlaceForDetail, locationFilter.areaKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const onPop = () => {
-      const params = new URLSearchParams(window.location.search);
-      const placeId = params.get('place');
+    const onPop = (e: PopStateEvent) => {
       detailUrlPushedRef.current = false;
-      if (!placeId) {
+      const segments = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+      if (segments.length < 2 || !segments[1]) {
         setSelectedPlaceForDetail(null);
+      } else if (e.state?.placeId) {
+        const found = places.find((p) => p.id === e.state.placeId);
+        if (found) openPlaceDetail(found);
       }
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  }, [places, openPlaceDetail]);
 
   const deepLinkAppliedRef = useRef(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (deepLinkAppliedRef.current) return;
     if (!places || places.length === 0) return;
+
+    const injectedSpotId = (window as unknown as { __MILZ_INITIAL_SPOT__?: string }).__MILZ_INITIAL_SPOT__;
+    if (injectedSpotId) {
+      const found = places.find((p) => p.id === injectedSpotId);
+      if (found) {
+        deepLinkAppliedRef.current = true;
+        openPlaceDetail(found);
+        return;
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
-    const placeId = params.get('place');
-    if (!placeId) {
+    const legacyPlaceId = params.get('place');
+    if (legacyPlaceId) {
+      const found = places.find((p) => p.id === legacyPlaceId);
+      if (found) {
+        deepLinkAppliedRef.current = true;
+        openPlaceDetail(found);
+      }
+      return;
+    }
+
+    const segments = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+    if (segments.length < 2 || !segments[1]) {
       deepLinkAppliedRef.current = true;
       return;
     }
-    const found = places.find((p) => p.id === placeId);
+    const spotSlug = segments[1];
+    const found = places.find((p) => toPlaceSlug(p.name) === spotSlug);
     if (found) {
       deepLinkAppliedRef.current = true;
-      setSelectedPlaceForDetail({
-        ...found,
-        images: [...(found.images || [])],
-        videos: [...(found.videos || [])],
-        pdfs: [...(found.pdfs || [])],
-        reviews: [...(found.reviews || [])],
-        badges: [...(found.badges || [])],
-        from_spot_items: [...(found.from_spot_items || [])],
-      });
+      openPlaceDetail(found);
+    } else {
+      deepLinkAppliedRef.current = true;
     }
-  }, [places]);
+  }, [places, openPlaceDetail]);
 
   useEffect(() => {
     if (!selectedPlaceForDetail) return;
@@ -10110,9 +10131,9 @@ Return ONLY valid JSON matching the schema.`;
                       onClick={() => {
                         const shareUrl = (() => {
                           if (typeof window === 'undefined') return '';
-                          const u = new URL(window.location.href);
-                          u.searchParams.set('place', selectedPlaceForDetail.id);
-                          return u.toString();
+                          const spotArea = selectedPlaceForDetail.area_key || locationFilter.areaKey || 'tokyo';
+                          const slug = toPlaceSlug(selectedPlaceForDetail.name);
+                          return `${window.location.origin}/${spotArea}/${slug}`;
                         })();
                         if (navigator.share) {
                           navigator.share({
