@@ -6740,8 +6740,13 @@ Return ONLY valid JSON matching the schema.`;
     );
   }
 
-  // Login / Landing Screen
-  if (!user) {
+  // Login / Landing Screen — skip if viewing a shared spot URL
+  const isSpotUrl = typeof window !== 'undefined' && (() => {
+    const segs = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+    return segs.length >= 2 && !!segs[1];
+  })();
+
+  if (!user && !isSpotUrl) {
     return (
       <MilzLanding
         authOpen={landingAuthOpen}
