@@ -10197,6 +10197,13 @@ Return ONLY valid JSON matching the schema.`;
                           className="bg-transparent font-display text-[88px] md:text-[160px] text-white leading-[0.88] text-center w-full outline-none border-b border-white/20 focus:border-white/60 uppercase"
                           placeholder="SPOT NAME"
                         />
+                        <input
+                          type="text"
+                          value={editDetailForm.description || ''}
+                          onChange={(e) => setEditDetailForm({ ...editDetailForm, description: e.target.value })}
+                          className="bg-white/5 backdrop-blur-md border border-white/30 text-white text-sm font-medium text-center w-full py-3 px-4 outline-none focus:border-white/70 mt-4"
+                          placeholder="Short description (shown on card)"
+                        />
                         <div className="flex justify-center pt-4">
                           <DropZone
                             label="Hero Background"
