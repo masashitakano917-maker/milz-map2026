@@ -3315,7 +3315,16 @@ function AppMain() {
 
   const openPlaceDetail = React.useCallback((target: Place | string | null | undefined) => {
     if (!target) {
+      if (!user) {
+        setGuestAuthPrompt(true);
+        return;
+      }
       setSelectedPlaceForDetail(null);
+      return;
+    }
+
+    if (!user) {
+      setGuestAuthPrompt(true);
       return;
     }
 
@@ -3334,7 +3343,7 @@ function AppMain() {
       badges: [...(resolved.badges || [])],
       from_spot_items: [...(resolved.from_spot_items || [])],
     });
-  }, [places]);
+  }, [places, user]);
   const [isEditingDetail, setIsEditingDetail] = useState(false);
   const [editDetailForm, setEditDetailForm] = useState<Partial<Place>>({});
   const [isUpdatingDetail, setIsUpdatingDetail] = useState(false);
@@ -3369,6 +3378,11 @@ function AppMain() {
       detailUrlPushedRef.current = false;
       const segments = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
       if (segments.length < 2 || !segments[1]) {
+        if (!user) {
+          setGuestAuthPrompt(true);
+          window.history.pushState(null, '', window.location.href);
+          return;
+        }
         setSelectedPlaceForDetail(null);
       } else if (e.state?.placeId) {
         const found = places.find((p) => p.id === e.state.placeId);
@@ -3806,6 +3820,7 @@ function AppMain() {
   const [authError, setAuthError] = useState('');
   const [authEmailSent, setAuthEmailSent] = useState(false);
   const [landingAuthOpen, setLandingAuthOpen] = useState(false);
+  const [guestAuthPrompt, setGuestAuthPrompt] = useState(false);
 
   useEffect(() => {
     if (activeTab !== 'map') {
@@ -6760,6 +6775,41 @@ Return ONLY valid JSON matching the schema.`;
         clearAuthEmailSent={() => setAuthEmailSent(false)}
         handleEmailAuth={handleEmailAuth}
       />
+    );
+  }
+
+  if (!user && isSpotUrl && !selectedPlaceForDetail) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <Loader2 className="w-8 h-8 text-emerald-600" />
+        </motion.div>
+        {landingAuthOpen && (
+          <div className="fixed inset-0 z-[10000]">
+            <MilzLanding
+              authOpen={landingAuthOpen}
+              setAuthOpen={setLandingAuthOpen}
+              authMode={authMode}
+              setAuthMode={setAuthMode}
+              selectedAuthRole={selectedAuthRole}
+              setSelectedAuthRole={setSelectedAuthRole}
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              authError={authError}
+              authEmailSent={authEmailSent}
+              clearAuthEmailSent={() => setAuthEmailSent(false)}
+              handleEmailAuth={handleEmailAuth}
+            />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -10103,8 +10153,8 @@ Return ONLY valid JSON matching the schema.`;
                   <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
                   
                   {/* Close Button */}
-                  <button 
-                    onClick={() => setSelectedPlaceForDetail(null)}
+                  <button
+                    onClick={() => { if (!user) { setGuestAuthPrompt(true); return; } setSelectedPlaceForDetail(null); }}
                     className="absolute top-8 right-8 w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full flex items-center justify-center z-10 hover:bg-white/20 transition-all active:scale-95"
                   >
                     <X className="w-8 h-8" />
@@ -10112,9 +10162,9 @@ Return ONLY valid JSON matching the schema.`;
 
                   {/* Actions Overlay */}
                   <div className="absolute top-8 left-8 flex gap-4 z-10">
-                    <button 
+                    <button
                       onClick={() => {
-                        const isFav = favorites.some(f => f.place_id === selectedPlaceForDetail.id);
+                        if (!user) { setGuestAuthPrompt(true); return; }
                         handleToggleFavorite(selectedPlaceForDetail.id);
                       }}
                       className={cn(
@@ -10860,8 +10910,8 @@ Return ONLY valid JSON matching the schema.`;
                     {/* Footer Action */}
                     <div className="pt-32 pb-20 text-center space-y-8">
                       <div className="w-px h-24 bg-stone-200 mx-auto" />
-                      <button 
-                        onClick={() => setSelectedPlaceForDetail(null)}
+                      <button
+                        onClick={() => { if (!user) { setGuestAuthPrompt(true); return; } setSelectedPlaceForDetail(null); }}
                         className="group inline-flex flex-col items-center gap-6"
                       >
                         <div className="w-20 h-20 bg-stone-50 border border-stone-200 rounded-full flex items-center justify-center group-hover:bg-black group-hover:border-black transition-all duration-500">
@@ -11672,6 +11722,78 @@ CREATE POLICY "Users can delete own favorites" ON favorites FOR DELETE USING (au
           </div>
         )}
       </AnimatePresence>
+
+      {/* Guest Auth Prompt — Instagram-style login gate */}
+      <AnimatePresence>
+        {guestAuthPrompt && !user && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <Lock className="w-7 h-7 text-stone-600" />
+                </div>
+                <h2 className="text-xl font-bold text-stone-900 mb-2">
+                  {locale === 'jp' ? 'ログインして続ける' : 'Log in to continue'}
+                </h2>
+                <p className="text-stone-500 text-sm leading-relaxed mb-6">
+                  {locale === 'jp'
+                    ? 'MILZの全スポットを閲覧するには、ログインまたは新規登録してください。'
+                    : 'Log in or sign up to browse all spots on MILZ.'}
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => { setGuestAuthPrompt(false); setLandingAuthOpen(true); setAuthMode('signin'); }}
+                    className="w-full py-3.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-stone-800 transition-all active:scale-[0.98]"
+                  >
+                    {locale === 'jp' ? 'ログイン' : 'Log In'}
+                  </button>
+                  <button
+                    onClick={() => { setGuestAuthPrompt(false); setLandingAuthOpen(true); setAuthMode('signup'); }}
+                    className="w-full py-3.5 bg-stone-100 text-stone-900 text-sm font-semibold rounded-xl hover:bg-stone-200 transition-all active:scale-[0.98]"
+                  >
+                    {locale === 'jp' ? '新規登録' : 'Sign Up'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth form overlay for guest users on spot pages */}
+      {!user && landingAuthOpen && (
+        <div className="fixed inset-0 z-[10000]">
+          <MilzLanding
+            authOpen={landingAuthOpen}
+            setAuthOpen={setLandingAuthOpen}
+            authMode={authMode}
+            setAuthMode={setAuthMode}
+            selectedAuthRole={selectedAuthRole}
+            setSelectedAuthRole={setSelectedAuthRole}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            authError={authError}
+            authEmailSent={authEmailSent}
+            clearAuthEmailSent={() => setAuthEmailSent(false)}
+            handleEmailAuth={handleEmailAuth}
+          />
+        </div>
+      )}
     </div>
   );
 }
