@@ -3313,6 +3313,7 @@ function AppMain() {
   const [placeTranslationCache, setPlaceTranslationCache] = useState<Record<string, Record<string, any>>>({});
   const [isTranslatingDetail, setIsTranslatingDetail] = useState(false);
 
+  const guestSpotViewedRef = useRef(false);
   const openPlaceDetail = React.useCallback((target: Place | string | null | undefined) => {
     if (!target) {
       if (!user) {
@@ -3323,7 +3324,7 @@ function AppMain() {
       return;
     }
 
-    if (!user) {
+    if (!user && guestSpotViewedRef.current) {
       setGuestAuthPrompt(true);
       return;
     }
@@ -3333,6 +3334,8 @@ function AppMain() {
       : places.find((place) => place.id === target.id) || target;
 
     if (!resolved) return;
+
+    if (!user) guestSpotViewedRef.current = true;
 
     setSelectedPlaceForDetail({
       ...resolved,
