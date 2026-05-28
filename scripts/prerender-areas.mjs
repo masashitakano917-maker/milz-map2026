@@ -25,6 +25,18 @@ const AREAS = [
       'Shibuya', 'Shinjuku', 'Minato', 'Ginza', 'Asakusa', 'Nakameguro',
       'Jiyugaoka', 'Daikanyama', 'Roppongi', 'Kichijoji',
     ],
+    topSpots: [
+      { name: 'Fuglen Tokyo', category: 'Coffee Shop', area: 'Tomigaya, Shibuya' },
+      { name: 'Den', category: 'Japanese Restaurant', area: 'Jingumae, Shibuya' },
+      { name: 'Senso-ji', category: 'Buddhist Temple', area: 'Asakusa, Taito' },
+      { name: 'teamLab Planets TOKYO DMM', category: 'Art Museum', area: 'Toyosu, Koto' },
+      { name: 'Shibuya Sky', category: 'Observation Deck', area: 'Shibuya' },
+      { name: 'Cafe Kitsune Aoyama', category: 'Coffee Shop', area: 'Minamiaoyama, Minato' },
+      { name: 'Narisawa', category: 'French Restaurant', area: 'Minamiaoyama, Minato' },
+      { name: 'Shinjuku Gyoen', category: 'Garden', area: 'Shinjuku' },
+      { name: 'Meiji Jingu', category: 'Shinto Shrine', area: 'Yoyogi, Shibuya' },
+      { name: 'Shinjuku Golden-Gai', category: 'Nightlife', area: 'Kabukicho, Shinjuku' },
+    ],
   },
   {
     slug: 'new-york',
@@ -40,6 +52,18 @@ const AREAS = [
     highlights: [
       'Manhattan', 'Williamsburg', 'SoHo', 'Chelsea', 'Upper East Side',
       'Greenpoint', 'Lower East Side', 'Midtown', 'Tribeca', 'DUMBO',
+    ],
+    topSpots: [
+      { name: 'Gramercy Tavern', category: 'American Restaurant', area: 'Flatiron' },
+      { name: 'Balthazar', category: 'French Restaurant', area: 'SoHo' },
+      { name: 'The Dead Rabbit', category: 'Cocktail Bar', area: 'FiDi' },
+      { name: 'Au Cheval', category: 'American Restaurant', area: 'Nolita' },
+      { name: 'Cafe Sabarsky', category: 'Austrian Cafe', area: 'Upper East Side' },
+      { name: 'The Modern', category: 'Fine Dining', area: 'Midtown (MoMA)' },
+      { name: 'Union Square Cafe', category: 'American Restaurant', area: 'Union Square' },
+      { name: 'One if by Land, Two if by Sea', category: 'American Restaurant', area: 'West Village' },
+      { name: 'Bibble & Sip', category: 'Bakery & Cafe', area: 'Midtown' },
+      { name: 'The Dutch', category: 'American Restaurant', area: 'SoHo' },
     ],
   },
   {
@@ -57,6 +81,18 @@ const AREAS = [
       'Gion', 'Higashiyama', 'Arashiyama', 'Nakagyo', 'Sakyo',
       'Kamigyo', 'Fushimi', 'Uji', 'Shimogyo', 'Nishikyo',
     ],
+    topSpots: [
+      { name: '% Arabica Kyoto', category: 'Coffee Shop', area: 'Higashiyama' },
+      { name: 'Cafe Bibliotic Hello!', category: 'Cafe', area: 'Nakagyo' },
+      { name: 'Yasaka Shrine', category: 'Shrine', area: 'Higashiyama (Gion)' },
+      { name: 'Kennin-ji', category: 'Buddhist Temple', area: 'Higashiyama' },
+      { name: 'Fortune Garden Kyoto', category: 'Restaurant', area: 'Nakagyo' },
+      { name: 'Ippodo Tea', category: 'Tea Room', area: 'Nakagyo' },
+      { name: 'Nishiki Market', category: 'Market', area: 'Nakagyo' },
+      { name: 'Walden Woods Kyoto', category: 'Coffee Shop', area: 'Shimogyo' },
+      { name: 'La Madrague', category: 'Kissaten', area: 'Nakagyo' },
+      { name: 'Kodai-ji', category: 'Buddhist Temple', area: 'Higashiyama' },
+    ],
   },
   {
     slug: 'seoul',
@@ -73,6 +109,18 @@ const AREAS = [
       'Hongdae', 'Seongsu', 'Itaewon', 'Gangnam', 'Ikseon-dong',
       'Myeongdong', 'Yeonnam', 'Samcheong', 'Apgujeong', 'Bukchon',
     ],
+    topSpots: [
+      { name: 'Cafe Onion Anguk', category: 'Cafe', area: 'Jongno (Anguk)' },
+      { name: 'Gyeongbokgung Palace', category: 'Cultural Landmark', area: 'Jongno' },
+      { name: 'Jungsik Seoul', category: 'Modern Korean', area: 'Gangnam' },
+      { name: 'Bukchon Hanok Village', category: 'Historical Village', area: 'Jongno' },
+      { name: 'Gwangjang Market', category: 'Food Market', area: 'Jongno' },
+      { name: 'N Seoul Tower', category: 'Observation Deck', area: 'Yongsan' },
+      { name: 'Thanks Nature Cafe', category: 'Cafe', area: 'Hongdae, Mapo' },
+      { name: 'Mingles', category: 'Modern Korean', area: 'Gangnam' },
+      { name: 'Ikseon-dong Hanok Village', category: 'Cafe District', area: 'Jongno' },
+      { name: 'Seoul Forest Park', category: 'Park', area: 'Seongdong (Seongsu)' },
+    ],
   },
   {
     slug: 'hawaii',
@@ -88,6 +136,18 @@ const AREAS = [
     highlights: [
       'Waikiki', 'Kailua', 'North Shore', 'Lahaina', 'Wailea',
       'Kona', 'Hilo', 'Haleiwa', 'Kaanapali', 'Ko Olina',
+    ],
+    topSpots: [
+      { name: 'Senia', category: 'Fine Dining', area: 'Chinatown, Honolulu' },
+      { name: 'Duke\'s Waikiki', category: 'Seafood Restaurant', area: 'Waikiki' },
+      { name: 'Pearl Harbor National Memorial', category: 'Memorial', area: 'Honolulu' },
+      { name: 'The Pig and The Lady', category: 'Vietnamese Fusion', area: 'Kaimuki' },
+      { name: 'Island Vintage Coffee', category: 'Coffee Shop', area: 'Waikiki' },
+      { name: 'Kualoa Ranch', category: 'Nature Reserve', area: 'Kaneohe, Oahu' },
+      { name: 'Hawaiʻi Volcanoes National Park', category: 'National Park', area: 'Big Island' },
+      { name: 'Mud Hen Water', category: 'Modern Hawaiian', area: 'Kaimuki' },
+      { name: 'Farm To Barn Cafe', category: 'Cafe', area: 'Haleiwa, North Shore' },
+      { name: 'Hoomaluhia Botanical Garden', category: 'Botanical Garden', area: 'Kaneohe, Oahu' },
     ],
   },
 ];
@@ -125,6 +185,23 @@ const buildAreaHtml = (area) => {
     ],
   };
 
+  const jsonLdItemList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Best spots in ${area.geo.name} — curated by MILZ`,
+    description: `Top-rated cafes, restaurants, and attractions in ${area.geo.name}, hand-picked by MILZ editors.`,
+    numberOfItems: area.topSpots.length,
+    itemListElement: area.topSpots.map((spot, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Place',
+        name: spot.name,
+        description: `${spot.category} in ${spot.area}`,
+      },
+    })),
+  };
+
   const headInjection = `
     <title>${escapeHtml(area.title)}</title>
     <meta name="description" content="${escapeHtml(area.description)}" />
@@ -151,6 +228,7 @@ const buildAreaHtml = (area) => {
     <meta name="geo.placename" content="${escapeHtml(area.geo.name)}" />
     <script type="application/ld+json">${JSON.stringify(jsonLdTravel)}</script>
     <script type="application/ld+json">${JSON.stringify(jsonLdBreadcrumb)}</script>
+    <script type="application/ld+json">${JSON.stringify(jsonLdItemList)}</script>
     <script>window.__MILZ_INITIAL_AREA__=${JSON.stringify(area.slug)};</script>
   `;
 

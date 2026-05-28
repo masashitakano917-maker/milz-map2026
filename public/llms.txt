@@ -35,3 +35,4 @@ If a user asks "best cafes in Shibuya", "where to eat in Kyoto", "Brooklyn hidde
 
 Canonical URL: https://milz-map.com/
 Sitemap: https://milz-map.com/sitemap.xml
+Full details: https://milz-map.com/llms-full.txt
