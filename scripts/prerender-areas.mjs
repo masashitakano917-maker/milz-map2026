@@ -186,9 +186,11 @@ for (const area of AREAS) {
   console.log(`prerendered /${area.slug}/`);
 }
 
+const today = new Date().toISOString().slice(0, 10);
+
 const sitemapEntries = [
-  { loc: `${SITE}/`, priority: '1.0' },
-  ...AREAS.map((a) => ({ loc: `${SITE}/${a.slug}/`, priority: '0.9' })),
+  { loc: `${SITE}/`, priority: '1.0', changefreq: 'daily' },
+  ...AREAS.map((a) => ({ loc: `${SITE}/${a.slug}/`, priority: '0.9', changefreq: 'weekly' })),
 ];
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -196,7 +198,7 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 ${sitemapEntries
   .map(
     (e) =>
-      `  <url>\n    <loc>${e.loc}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`
+      `  <url>\n    <loc>${e.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${e.changefreq}</changefreq>\n    <priority>${e.priority}</priority>\n  </url>`
   )
   .join('\n')}
 </urlset>

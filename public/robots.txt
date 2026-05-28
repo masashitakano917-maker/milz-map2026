@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /rest/v1/
+Disallow: /auth/v1/
+Disallow: /storage/v1/
+Disallow: /functions/v1/
+Disallow: /realtime/
+Disallow: /?*
 
 # AI crawlers - explicitly allowed so MILZ shows up in AI answers
 User-agent: GPTBot
