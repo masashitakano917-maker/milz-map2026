@@ -3356,15 +3356,9 @@ function AppMain() {
         detailUrlPushedRef.current = true;
       }
     } else {
-      const segments = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
-      if (segments.length >= 2 && segments[1]) {
-        const areaPath = `/${segments[0]}/`;
-        if (detailUrlPushedRef.current) {
-          window.history.back();
-          detailUrlPushedRef.current = false;
-        } else {
-          window.history.replaceState(null, '', areaPath);
-        }
+      if (detailUrlPushedRef.current) {
+        detailUrlPushedRef.current = false;
+        window.history.back();
       }
     }
   }, [selectedPlaceForDetail]);
