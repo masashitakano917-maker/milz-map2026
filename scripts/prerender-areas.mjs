@@ -317,7 +317,7 @@ const buildAreaHtml = (area, areaSpots) => {
     `$1\n${headInjection}\n    $2`
   );
   // Put SSR content INSIDE #root so React.createRoot replaces it
-  html = html.replace(/<div id="root"><\/div>/, `<div id="root">${ssrContent}</div>`);
+  html = html.replace(/<div id="root">[\s\S]*?<\/div>\s*<noscript>/, `<div id="root">${ssrContent}</div>\n    <noscript>`);
   html = html.replace(/<html lang="[^"]*"/, `<html lang="${area.lang}"`);
   return html;
 };
@@ -326,7 +326,7 @@ const buildAreaHtml = (area, areaSpots) => {
 
 const AREA_GEO_MAP = Object.fromEntries(AREAS.map((a) => [a.slug, a]));
 
-function buildSpotHtml(spot) {
+function buildSpotHtml(spot, relatedSpots = []) {
   const areaSlug = normalizeAreaSlug(spot.area_key || 'tokyo');
   const slug = toPlaceSlug(spot.name);
   const url = `${SITE}/${areaSlug}/${slug}`;
@@ -453,6 +453,11 @@ function buildSpotHtml(spot) {
       ${infoHtml}
       ${descriptionHtml}
       ${spot.website_url ? `<p><a href="${escapeHtml(spot.website_url)}" rel="noopener">${isJapanese ? '公式サイト' : 'Official website'}</a></p>` : ''}
+      ${relatedSpots.length > 0 ? `
+      <h2>${isJapanese ? `${escapeHtml(areaName)}の他のスポット` : `More spots in ${escapeHtml(areaName)}`}</h2>
+      <ul class="spot-grid">
+        ${relatedSpots.map((rs) => `<li><a href="/${areaSlug}/${rs.slug}" class="spot-name">${escapeHtml(rs.name)}</a><span class="spot-cat">${escapeHtml(rs.category || '')}</span></li>`).join('\n        ')}
+      </ul>` : ''}
       <a href="/${areaSlug}/" class="cta">${isJapanese ? `${escapeHtml(areaName)}の全スポットを見る` : `View all spots in ${escapeHtml(areaName)}`}</a>
     </div>
   `;
@@ -462,7 +467,7 @@ function buildSpotHtml(spot) {
     /(<meta name="theme-color"[^>]*>)\s*[\s\S]*?(<script type="module")/,
     `$1\n${headInjection}\n    $2`
   );
-  html = html.replace(/<div id="root"><\/div>/, `<div id="root">${ssrContent}</div>`);
+  html = html.replace(/<div id="root">[\s\S]*?<\/div>\s*<noscript>/, `<div id="root">${ssrContent}</div>\n    <noscript>`);
   html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`);
   return html;
 }
@@ -533,6 +538,15 @@ for (const area of AREAS) {
 const spotSitemapEntries = [];
 const seenSlugs = new Set();
 
+// Pre-build per-area slug lists for related spots
+const areaSpotSlugs = {};
+for (const spot of spots) {
+  const areaSlug = normalizeAreaSlug(spot.area_key || 'tokyo');
+  const slug = toPlaceSlug(spot.name);
+  if (!areaSpotSlugs[areaSlug]) areaSpotSlugs[areaSlug] = [];
+  areaSpotSlugs[areaSlug].push({ name: spot.name, slug, category: spot.category || '' });
+}
+
 for (const spot of spots) {
   const areaSlug = normalizeAreaSlug(spot.area_key || 'tokyo');
   const slug = toPlaceSlug(spot.name);
@@ -540,7 +554,11 @@ for (const spot of spots) {
   if (seenSlugs.has(uniqueKey)) continue;
   seenSlugs.add(uniqueKey);
 
-  const html = buildSpotHtml(spot);
+  // Pick up to 8 related spots from the same area (excluding self)
+  const siblings = (areaSpotSlugs[areaSlug] || []).filter((s) => s.slug !== slug);
+  const relatedSpots = siblings.sort(() => Math.random() - 0.5).slice(0, 8);
+
+  const html = buildSpotHtml(spot, relatedSpots);
   const outDir = join(distDir, areaSlug, slug);
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, 'index.html'), html, 'utf8');

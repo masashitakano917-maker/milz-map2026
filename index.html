@@ -127,16 +127,25 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:0 auto;padding:2rem 1.25rem;color:#222;line-height:1.7" id="ssr-prerendered">
+        <h1 style="font-size:1.75rem;font-weight:800;margin:0 0 .75rem">MILZ — 旅・旅行ガイド｜厳選シティマップ / Curated Travel Map</h1>
+        <p>MILZ（ミルズ）は旅・旅行好きのための厳選マップです。東京・京都・ニューヨーク・ソウル・ハワイのカフェ、レストラン、ショップ、隠れスポットを区や駅から検索できます。お気に入り保存、AIが選ぶトレンドも。</p>
+        <p>MILZ is a curated travel guide and interactive map covering Tokyo, Kyoto, New York, Seoul and Hawaii. Discover trusted cafes, restaurants, shops and hidden spots filtered by district or station.</p>
+        <h2 style="font-size:1.25rem;font-weight:700;margin:1.5rem 0 .5rem">エリア / Areas</h2>
+        <ul style="list-style:none;padding:0">
+          <li style="padding:.5rem 0;border-bottom:1px solid #f0f0f0"><a href="/tokyo/" style="font-weight:600;color:#0066cc;text-decoration:none">東京 / Tokyo</a> — 渋谷・新宿・銀座・浅草のカフェ、レストラン、隠れスポット</li>
+          <li style="padding:.5rem 0;border-bottom:1px solid #f0f0f0"><a href="/new-york/" style="font-weight:600;color:#0066cc;text-decoration:none">ニューヨーク / New York</a> — Manhattan, Brooklyn, SoHo, Chelsea and more</li>
+          <li style="padding:.5rem 0;border-bottom:1px solid #f0f0f0"><a href="/kyoto/" style="font-weight:600;color:#0066cc;text-decoration:none">京都 / Kyoto</a> — 祇園・東山・嵐山の寺社、町家カフェ、隠れスポット</li>
+          <li style="padding:.5rem 0;border-bottom:1px solid #f0f0f0"><a href="/seoul/" style="font-weight:600;color:#0066cc;text-decoration:none">ソウル / Seoul</a> — Hongdae, Seongsu, Itaewon, Gangnam and more</li>
+          <li style="padding:.5rem 0"><a href="/hawaii/" style="font-weight:600;color:#0066cc;text-decoration:none">ハワイ / Hawaii</a> — Waikiki, North Shore, Maui, Big Island</li>
+        </ul>
+        <p style="margin-top:1.5rem;font-size:.875rem;color:#666">各エリアページにはGoogleに登録された個別スポットページへのリンクがあります。</p>
+      </div>
+    </div>
     <noscript>
-      <h1 style="font-family:system-ui;padding:2rem 2rem 0;max-width:720px;margin:0 auto;">
-        MILZ — 旅・旅行ガイド｜東京・京都・ニューヨーク・ソウル・ハワイの厳選シティマップ
-      </h1>
-      <p style="font-family:system-ui;padding:0 2rem 2rem;max-width:720px;margin:0 auto;line-height:1.7;">
-        MILZ（ミルズ）は旅・旅行好きのための厳選マップです。東京・京都・ニューヨーク・ソウル・ハワイの
-        カフェ、レストラン、ショップ、隠れスポットを、区や駅から検索できます。お気に入りを保存したり、
-        AIが選ぶローカルトレンドもチェックできます。Travel guide and curated city map for Tokyo,
-        New York, Kyoto, Seoul and Hawaii. Please enable JavaScript to explore the full map.
+      <p style="font-family:system-ui;padding:1rem 2rem;max-width:720px;margin:0 auto;">
+        Please enable JavaScript to explore the full interactive map.
       </p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
